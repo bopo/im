@@ -76,13 +76,3 @@
     field:
         user_id:用户id
         app_id:应用id
-
-
-## 官方QQ群
-1. 450359487，加群请附加说明信息。
-
-## 官方网站
-   https://developer.gobelieve.io/
-
-## 相关产品
-   https://goubuli.mobi/
