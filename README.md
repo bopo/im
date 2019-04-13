@@ -64,9 +64,9 @@
     nohup $BASEDIR/imr -log_dir=./logs/imr imr.cfg >./logs/imr/imr.log 2>&1 &
     nohup $BASEDIR/im -log_dir=./logs/im im.cfg >./logs/im/im.log 2>&1 &
 
-    ./bin/ims -log_dir=./logs/ims config/ims.cfg >./logs/ims/ims.log 2>&1 &
-    ./bin/imr -log_dir=./logs/imr config/imr.cfg >./logs/imr/imr.log 2>&1 &
-    ./bin/im -log_dir=./logs/im config/im.cfg >./logs/im/im.log 2>&1 &
+    ./bin/ims -log_dir=./log/ims cfg/ims.cfg >./log/ims/ims.log 2>&1 &
+    ./bin/imr -log_dir=./log/imr cfg/imr.cfg >./log/imr/imr.log 2>&1 &
+    ./bin/im -log_dir=./log/im cfg/im.cfg >./log/im/im.log 2>&1 &
 
 ## token的格式
 
