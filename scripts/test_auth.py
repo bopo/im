@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+import hashlib
+import json
+import logging
+import random
+import sys
+import time
+from urllib.parse import urlencode
+from user import User
+
+import redis
+
+import config
+
+rds = redis.StrictRedis(host=config.REDIS_HOST, password=config.REDIS_PASSWORD, port=config.REDIS_PORT, db=config.REDIS_DB)
+
+
+UNICODE_ASCII_CHARACTER_SET = ('abcdefghijklmnopqrstuvwxyz'
+                               'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                               '0123456789')
+
+def random_token_generator(length=30, chars=UNICODE_ASCII_CHARACTER_SET):
+    rand = random.SystemRandom()
+    return ''.join(rand.choice(chars) for x in range(length))
+
+def create_access_token():
+    return random_token_generator()
+
+
+def saslprep(string):
+    return string.decode() if type(string) is bytes else string
+
+def ha1(username, realm, password):
+    return hashlib.md5(':'.join((username, realm, saslprep(password))).encode('utf-8')).digest()
+
+def hmac(username, realm, password):
+    return ha1(username, realm, password)
+
+
+APPID = config.APPID
+
+def grant_auth_token(uid, name):
+    appid = APPID
+    token = User.get_user_access_token(rds, appid, uid)
+
+    if not token:
+        token = create_access_token()
+        User.add_user_count(rds, appid, uid)
+
+    User.save_user_access_token(rds, appid, uid, name, token)
+
+    u = "%s_%s"%(appid, uid)
+    realm = "com.beetle.face"
+    key = hmac(u, realm, token)
+    # print(key)
+    User.set_turn_key(rds, appid, uid, key)
+    User.set_turn_password(rds, appid, uid, token)
+        
+    return token
+
+
+def test_main():
+    assert grant_auth_token(1, 'name')
+
+def test_main2():    
+    assert grant_auth_token(2, 'name')
+    assert grant_auth_token(3, 'name')
+    assert grant_auth_token(4, 'name')
+    assert grant_auth_token(5, 'name')
+    assert grant_auth_token(6, 'name')
+    assert grant_auth_token(7, 'name')
+    assert grant_auth_token(8, 'name')
+
