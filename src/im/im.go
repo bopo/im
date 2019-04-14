@@ -515,6 +515,7 @@ func main() {
 		config.redis_db)
 
 	rpc_clients = make([]*gorpc.DispatcherClient, 0)
+
 	for _, addr := range(config.storage_rpc_addrs) {
 		c := &gorpc.Client{
 			Conns: 4,
@@ -532,6 +533,7 @@ func main() {
 		dc := dispatcher.NewFuncClient(c)
 
 		rpc_clients = append(rpc_clients, dc)
+		log.Info("storage_rpc_addrs:", addr)
 	}
 
 	if len(config.group_storage_rpc_addrs) > 0 {
@@ -558,10 +560,12 @@ func main() {
 	}
 
 	route_channels = make([]*Channel, 0)
+
 	for _, addr := range(config.route_addrs) {
 		channel := NewChannel(addr, DispatchAppMessage, DispatchGroupMessage, DispatchRoomMessage)
 		channel.Start()
 		route_channels = append(route_channels, channel)
+		log.Info("route_addrs:", addr)
 	}
 
 	if len(config.group_route_addrs) > 0 {
@@ -570,6 +574,7 @@ func main() {
 			channel := NewChannel(addr, DispatchAppMessage, DispatchGroupMessage, DispatchRoomMessage)
 			channel.Start()
 			group_route_channels = append(group_route_channels, channel)
+			log.Info("group_route_addrs:", addr)
 		}
 	} else {
 		group_route_channels = route_channels
@@ -578,12 +583,13 @@ func main() {
 	if len(config.word_file) > 0 {
 		filter = sensitive.New()
 		filter.LoadWordDict(config.word_file)
+		log.Info("word_file:", config.word_file)
 	}
 	
 	group_manager = NewGroupManager()
 	group_manager.Start()
-
 	group_message_delivers = make([]*GroupMessageDeliver, config.group_deliver_count)
+
 	for i := 0; i < config.group_deliver_count; i++ {
 		q := fmt.Sprintf("q%d", i)
 		r := path.Join(config.pending_root, q)
@@ -593,19 +599,34 @@ func main() {
 	}
 	
 	go ListenRedis()
+	log.Infof("ListenRedis")
+
 	go SyncKeyService()
-	
+	log.Infof("SyncKeyService")
+
+	// http server
 	go StartHttpServer(config.http_listen_address)
+	log.Infof("StartHttpServer")
+
+	// rpc server
 	StartRPCServer(config.rpc_listen_address)
+	log.Infof("StartRPCServer")
 
-	go StartSocketIO(config.socket_io_address, config.tls_address, 
-		config.cert_file, config.key_file)
-	go StartWSServer(config.ws_address, config.wss_address, 
-		config.cert_file, config.key_file)
+	//socket io server
+	go StartSocketIO(config.socket_io_address, config.tls_address, config.cert_file, config.key_file)
+	log.Infof("StartSocketIO")
 
+	// websocket server
+	go StartWSServer(config.ws_address, config.wss_address, config.cert_file, config.key_file)
+	log.Infof("StartWSServer")
+
+	// ssl server
 	if config.ssl_port > 0 && len(config.cert_file) > 0 && len(config.key_file) > 0 {
+		log.Infof("ListenSSL")
 		go ListenSSL(config.ssl_port, config.cert_file, config.key_file)
 	}
+
+	log.Infof("ListenClient")
 	ListenClient()
 	log.Infof("exit")
 }

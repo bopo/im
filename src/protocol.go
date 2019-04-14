@@ -91,6 +91,7 @@ func SendMessage(conn io.Writer, msg *Message) error {
 func ReceiveLimitMessage(conn io.Reader, limit_size int, external bool) *Message {
 	buff := make([]byte, 12)
 	_, err := io.ReadFull(conn, buff)
+	
 	if err != nil {
 		log.Info("sock read error:", err)
 		return nil

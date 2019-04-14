@@ -214,6 +214,7 @@ func (storage *StorageFile) ReadMessage(file *os.File) *Message {
 	//校验消息起始位置的magic
 	var magic int32
 	err := binary.Read(file, binary.BigEndian, &magic)
+
 	if err != nil {
 		log.Info("read file err:", err)
 		return nil
@@ -223,12 +224,15 @@ func (storage *StorageFile) ReadMessage(file *os.File) *Message {
 		log.Warning("magic err:", magic)
 		return nil
 	}
+
 	msg := ReceiveMessage(file)
+
 	if msg == nil {
 		return msg
 	}
 	
 	err = binary.Read(file, binary.BigEndian, &magic)
+
 	if err != nil {
 		log.Info("read file err:", err)
 		return nil
@@ -238,6 +242,7 @@ func (storage *StorageFile) ReadMessage(file *os.File) *Message {
 		log.Warning("magic err:", magic)
 		return nil
 	}
+
 	return msg
 }
 

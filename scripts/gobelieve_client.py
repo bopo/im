@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
-import base64
-import json
-import random
-import socket
 import struct
-import sys
+import socket
 import threading
 import time
-import uuid
-from hashlib import md5
-
 import requests
-
+import json
+import uuid
+import base64
+import md5
+import sys
+import random
 from gobelieve_auth import grant_auth_token
 from gobelieve_group import create_group, delete_group
 from protocol import *
@@ -29,7 +27,7 @@ def connect_server(uid, port):
     
     if not token:
         return None, 0
-
+    
     seq = 0
     address = (HOST, port)
     
@@ -37,17 +35,17 @@ def connect_server(uid, port):
     sock.connect(address)
     auth = AuthenticationToken()
     auth.token = token
-    
     seq = seq + 1
-    
+    input('token: ' + token)
+
     send_message(MSG_AUTH_TOKEN, seq, auth, sock)
-    
+
     cmd, _, msg = recv_message(sock)
-    
+
     if cmd != MSG_AUTH_STATUS or msg != 0:
         return None, 0
-
     return sock, seq
+
 
 
 count = 1
@@ -78,7 +76,7 @@ def recv_client_(uid, port, handler, group_id):
     
     while True:
         cmd, s, msg = recv_message(sock)
-        print("cmd:", cmd, "msg:", msg)
+        print "cmd:", cmd, "msg:", msg
     
         if cmd == MSG_SYNC_BEGIN:
             begin = True
@@ -101,7 +99,6 @@ def recv_client_(uid, port, handler, group_id):
         elif cmd == MSG_SYNC_GROUP_NOTIFY:
             group_id, new_sync_key = msg
             skey = group_sync_keys.get(group_id, 0)
-    
             if new_sync_key > skey:
                 seq += 1
                 send_message(MSG_SYNC_GROUP, seq, (group_id, skey), sock)
@@ -111,21 +108,19 @@ def recv_client_(uid, port, handler, group_id):
             begin = False
             group_id, new_sync_key = msg
             skey = group_sync_keys.get(group_id, 0)
-    
             if new_sync_key > skey:
                 group_sync_keys[group_id] = new_sync_key
                 skey = group_sync_keys.get(group_id, 0)
                 seq += 1
                 send_message(MSG_GROUP_SYNC_KEY, seq, (group_id, skey), sock)
-    
             if quit:
                 break
 
         elif handler(cmd, s, msg):
             quit = True
-    
             if not begin:
                 break
+
 
     sock.close()
     task += 1
@@ -141,7 +136,7 @@ def recv_message_client(uid, port=23000):
             return False
 
     recv_client(uid, port, handle_message)
-    print("recv message success")
+    print "recv message success"
 
 def recv_group_message_client(uid, port=23000, group_id = 0):
     def handle_message(cmd, s, msg):
@@ -151,34 +146,33 @@ def recv_group_message_client(uid, port=23000, group_id = 0):
             return False
         else:
             return False
-
+    
     recv_group_client(uid, group_id, port, handle_message)
-    print("recv group message success")
+    print "recv group message success"
 
 def send_client(uid, receiver, msg_type):
     global task
     sock, seq =  connect_server(uid, 23000)
-
+    
     im = IMMessage()
     im.sender = uid
     im.receiver = receiver
-
+    
     if msg_type == MSG_IM:
         im.content = "test im %s" % random.randint(0, 2<<32)
     else:
         im.content = "test group im %s" % random.randint(0, 2<<32)
-
+    
     seq += 1
     send_message(msg_type, seq, im, sock)
-
     msg_seq = seq
-
+    
     while True:
         cmd, s, msg = recv_message(sock)
         if cmd == MSG_ACK and msg == msg_seq:
             break
         elif cmd == MSG_GROUP_NOTIFICATION:
-            print("send ack...")
+            print "send ack..."
             seq += 1
             send_message(MSG_ACK, seq, s, sock)
         else:
@@ -186,10 +180,7 @@ def send_client(uid, receiver, msg_type):
         
     sock.close()    
     task += 1
-    print("send success")
-
-    
-
+    print "send success"
 
 def TestSendAndRecv():
     global task
@@ -207,7 +198,7 @@ def TestSendAndRecv():
     
     while task < 2:
         time.sleep(1)
-    print("test peer message completed")
+    print "test peer message completed"
 
 
         
@@ -224,7 +215,7 @@ def TestGroupMessage():
 
     group_id = create_group(13800000000, "test", is_super, [13800000000,13800000001])
     
-    print("group id:", group_id)
+    print "group id:", group_id
     time.sleep(1)
 
     t2 = threading.Thread(target=send_client, args=(13800000000, group_id, MSG_GROUP_IM))
@@ -235,14 +226,13 @@ def TestGroupMessage():
         time.sleep(1)
 
     delete_group(group_id)
-    print("test group message completed")
+    print "test group message completed"
 
     
 def main():
     TestSendAndRecv()
-    TestGroupMessage()
-   
-
+    # TestGroupMessage()
 
 if __name__ == "__main__":
     main()
+

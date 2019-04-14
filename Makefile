@@ -17,7 +17,7 @@ clean:
 
 distclean: clean
 	rm -rf bin
-	rm -rf var
+	rm -rf runtime
 
 test:
 	py.test -v ./tests
@@ -28,6 +28,11 @@ init:
 	mkdir -p ./runtime/log/im
 	mkdir -p ./runtime/tmp/im
 	mkdir -p ./runtime/tmp/pending
+
+stop:
+	killall im
+	killall ims
+	killall imr
 
 start: init
 	honcho start
