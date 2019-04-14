@@ -17,5 +17,11 @@ clean:
 
 distclean: clean
 	rm -rf bin
-	rm -rf tmp
-	rm -rf log
+	rm -rf var
+
+init:
+	mkdir -p ./var/log/ims
+	mkdir -p ./var/log/imr
+	mkdir -p ./var/log/im
+	mkdir -p ./var/tmp/im
+	mkdir -p ./var/tmp/pending

@@ -16,5 +16,4 @@
 
 .idea/
 bin/
-log/
-tmp/
+var/
