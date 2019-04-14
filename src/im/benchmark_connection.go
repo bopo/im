@@ -37,21 +37,25 @@ func NewRedisPool(server, password string, db int) *redis.Pool {
 		MaxIdle:     100,
 		MaxActive:   500,
 		IdleTimeout: 480 * time.Second,
+
 		Dial: func() (redis.Conn, error) {
 			timeout := time.Duration(2) * time.Second
 			c, err := redis.DialTimeout("tcp", server, timeout, 0, 0)
+
 			if err != nil {
 				return nil, err
 			}
+
 			if len(password) > 0 {
 				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
+					_ = c.Close()
 					return nil, err
 				}
 			}
+
 			if db > 0 && db < 16 {
 				if _, err := c.Do("SELECT", db); err != nil {
-					c.Close()
+					_ = c.Close()
 					return nil, err
 				}
 			}
@@ -63,6 +67,7 @@ func NewRedisPool(server, password string, db int) *redis.Pool {
 func GenerateRandomBytes(n int) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := cryptorand.Read(b)
+
 	// Note that err == nil only if we read len(b) bytes.
 	if err != nil {
 		return nil, err
@@ -116,28 +121,29 @@ func receive(uid int64) {
 	}
 
 	seq := 1
-	SendMessage(conn, &Message{MSG_AUTH_TOKEN, seq, DEFAULT_VERSION, 0, &AuthenticationToken{token: token, platform_id: PLATFORM_WEB, device_id: "1"}})
+	_ = SendMessage(conn, &Message{MSG_AUTH_TOKEN, seq, DEFAULT_VERSION, 0, &AuthenticationToken{token: token, platform_id: PLATFORM_WEB, device_id: "1"}})
 	ReceiveMessage(conn)
 
 	q := make(chan bool, 10)
 	wt := make(chan *Message, 10)
 
 	const HEARTBEAT_TIMEOUT = 3 * 60
+
 	go func() {
-		msgid := 0
+		msgId := 0
 		ticker := time.NewTicker(HEARTBEAT_TIMEOUT * time.Second)
 		ticker2 := time.NewTicker(150 * time.Second)
 		for {
 			select {
 			case <-ticker2.C:
 				seq++
-				msgid++
+				msgId++
 				receiver := first + rand.Int63()%(last-first)
-				im := &IMMessage{uid, receiver, 0, int32(msgid), "test"}
-				SendMessage(conn, &Message{MSG_IM, seq, DEFAULT_VERSION, 0, im})
+				im := &IMMessage{uid, receiver, 0, int32(msgId), "test"}
+				_ = SendMessage(conn, &Message{MSG_IM, seq, DEFAULT_VERSION, 0, im})
 			case <-ticker.C:
 				seq++
-				SendMessage(conn, &Message{MSG_PING, seq, DEFAULT_VERSION, 0, nil})
+				_ = SendMessage(conn, &Message{MSG_PING, seq, DEFAULT_VERSION, 0, nil})
 			case m := <-wt:
 				if m == nil {
 					q <- true
@@ -145,7 +151,7 @@ func receive(uid int64) {
 				}
 				seq++
 				m.seq = seq
-				SendMessage(conn, m)
+				_ = SendMessage(conn, m)
 			}
 		}
 	}()
@@ -183,16 +189,15 @@ func receive_loop(uid int64) {
 func main() {
 	runtime.GOMAXPROCS(4)
 	rand.Seed(time.Now().Unix())
-
 	flag.Parse()
+
 	log.Printf("first:%d last:%d local ip:%s host:%s port:%d\n",
 		first, last, local_ip, host, port)
 
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
-
 	redis_pool = NewRedisPool(REDIS_HOST, REDIS_PASSWORD, REDIS_DB)
-
 	c := make(chan bool, 100)
+
 	var i int64
 	var j int64
 

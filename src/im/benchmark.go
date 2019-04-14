@@ -82,7 +82,7 @@ func send(uid int64, receiver int64, sem chan int) {
 	_ = SendMessage(conn, &Message{cmd: MSG_AUTH_TOKEN, seq: seq, version: DEFAULT_VERSION, body: auth})
 	ReceiveMessage(conn)
 
-	send_count := 0
+	sendCount := 0
 	for i := 0; i < count; i++ {
 		content := fmt.Sprintf("test....%d", i)
 		seq++
@@ -112,7 +112,7 @@ func send(uid int64, receiver int64, sem chan int) {
 		}
 
 		if ack != nil {
-			send_count++
+			sendCount++
 		} else {
 			log.Println("recv ack error")
 			break
@@ -120,11 +120,11 @@ func send(uid int64, receiver int64, sem chan int) {
 	}
 	_ = conn.Close()
 	c <- true
-	log.Printf("%d send complete:%d", uid, send_count)
+	log.Printf("%d send complete:%d", uid, sendCount)
 }
 
 func receive(uid int64, limit int, sem chan int) {
-	sync_key := int64(0)
+	syncKey := int64(0)
 
 	ip := net.ParseIP(HOST)
 	addr := net.TCPAddr{ip, PORT, ""}
@@ -146,15 +146,16 @@ func receive(uid int64, limit int, sem chan int) {
 	ReceiveMessage(conn)
 
 	seq++
-	ss := &Message{MSG_SYNC, seq, DEFAULT_VERSION, 0, &SyncKey{sync_key}}
+	ss := &Message{MSG_SYNC, seq, DEFAULT_VERSION, 0, &SyncKey{syncKey}}
 	_ = SendMessage(conn, ss)
 
 	//一次同步的取到的消息数目
-	sync_count := 0
+	syncCount := 0
 
-	recv_count := 0
+	recvCount := 0
 	syncing := false
-	pending_sync := false
+	pendingSync := false
+
 	for {
 		if limit > 0 {
 			_ = conn.SetDeadline(time.Now().Add(40 * time.Second))
@@ -171,18 +172,18 @@ func receive(uid int64, limit int, sem chan int) {
 		if msg.cmd == MSG_SYNC_NOTIFY {
 			if !syncing {
 				seq++
-				s := &Message{MSG_SYNC, seq, DEFAULT_VERSION, 0, &SyncKey{sync_key}}
-				SendMessage(conn, s)
+				s := &Message{MSG_SYNC, seq, DEFAULT_VERSION, 0, &SyncKey{syncKey}}
+				_ = SendMessage(conn, s)
 				syncing = true
 			} else {
-				pending_sync = true
+				pendingSync = true
 			}
 		} else if msg.cmd == MSG_IM {
 			//m := msg.body.(*IMMessage)
 			//log.Printf("sender:%d receiver:%d content:%s", m.sender, m.receiver, m.content)
 
-			recv_count += 1
-			if limit > 0 && recv_count <= limit {
+			recvCount += 1
+			if limit > 0 && recvCount <= limit {
 				select {
 				case sem <- 1:
 					break
@@ -191,40 +192,40 @@ func receive(uid int64, limit int, sem chan int) {
 				}
 			}
 
-			sync_count++
+			syncCount++
 
 			seq++
 			ack := &Message{MSG_ACK, seq, DEFAULT_VERSION, 0, &MessageACK{int32(msg.seq)}}
 			SendMessage(conn, ack)
 		} else if msg.cmd == MSG_SYNC_BEGIN {
-			sync_count = 0
+			syncCount = 0
 			//log.Println("sync begin:", recv_count)
 		} else if msg.cmd == MSG_SYNC_END {
 			syncing = false
 			s := msg.body.(*SyncKey)
 			//log.Println("sync end:", recv_count, s.sync_key, sync_key)			
-			if s.sync_key > sync_key {
-				sync_key = s.sync_key
+			if s.sync_key > syncKey {
+				syncKey = s.sync_key
 				//log.Println("sync key:", sync_key)
 				seq++
-				sk := &Message{MSG_SYNC_KEY, seq, DEFAULT_VERSION, 0, &SyncKey{sync_key}}
+				sk := &Message{MSG_SYNC_KEY, seq, DEFAULT_VERSION, 0, &SyncKey{syncKey}}
 				SendMessage(conn, sk)
 			}
 
-			if limit < 0 && sync_count == 0 {
+			if limit < 0 && syncCount == 0 {
 				break
 			}
 
-			if limit > 0 && recv_count >= limit {
+			if limit > 0 && recvCount >= limit {
 				break
 			}
 
-			if pending_sync {
+			if pendingSync {
 				seq++
-				s := &Message{MSG_SYNC, seq, DEFAULT_VERSION, 0, &SyncKey{sync_key}}
+				s := &Message{MSG_SYNC, seq, DEFAULT_VERSION, 0, &SyncKey{syncKey}}
 				SendMessage(conn, s)
 				syncing = true
-				pending_sync = false
+				pendingSync = false
 			}
 
 		} else {
@@ -234,7 +235,7 @@ func receive(uid int64, limit int, sem chan int) {
 	conn.Close()
 	c <- true
 
-	log.Printf("%d received:%d", uid, recv_count)
+	log.Printf("%d received:%d", uid, recvCount)
 }
 
 func main() {

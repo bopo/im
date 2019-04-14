@@ -70,7 +70,7 @@ func recv(uid int64, gid int64, conn *net.TCPConn) {
 	n := count * (concurrent)
 	total := n
 	for i := 0; i < n; i++ {
-		conn.SetDeadline(time.Now().Add(40 * time.Second))
+		_ = conn.SetDeadline(time.Now().Add(40 * time.Second))
 		msg := ReceiveMessage(conn)
 		if msg == nil {
 			log.Println("receive nill message")
@@ -89,7 +89,7 @@ func recv(uid int64, gid int64, conn *net.TCPConn) {
 		}
 		seq++
 		ack := &Message{MSG_ACK, seq, DEFAULT_VERSION, 0, &MessageACK{int32(msg.seq)}}
-		SendMessage(conn, ack)
+		_ = SendMessage(conn, ack)
 	}
 	log.Printf("%d received:%d", uid, total)
 	c <- true
@@ -105,7 +105,7 @@ func send(uid int64, gid int64, conn *net.TCPConn) {
 		c := count * (concurrent - 1)
 		total := c
 		for i := 0; i < c; i++ {
-			conn.SetDeadline(time.Now().Add(40 * time.Second))
+			_ = conn.SetDeadline(time.Now().Add(40 * time.Second))
 			msg := ReceiveMessage(conn)
 			if msg == nil {
 				log.Println("receive nill message")
@@ -130,7 +130,7 @@ func send(uid int64, gid int64, conn *net.TCPConn) {
 			}
 			seq++
 			ack := &Message{MSG_ACK, seq, DEFAULT_VERSION, 0, &MessageACK{int32(msg.seq)}}
-			SendMessage(conn, ack)
+			_ = SendMessage(conn, ack)
 		}
 		log.Printf("%d received:%d", uid, total)
 		close(close_c)
@@ -141,7 +141,7 @@ func send(uid int64, gid int64, conn *net.TCPConn) {
 		seq++
 		msg := &Message{MSG_GROUP_IM, seq, DEFAULT_VERSION, 0,
 			&IMMessage{uid, gid, 0, int32(i), content}}
-		SendMessage(conn, msg)
+		_ = SendMessage(conn, msg)
 		var e bool
 		select {
 		case <-ack_c:
@@ -194,7 +194,7 @@ func ConnectServer(uid int64) *net.TCPConn {
 	}
 	seq := 1
 	auth := &AuthenticationToken{token: token, platform_id: 1, device_id: "00000000"}
-	SendMessage(conn, &Message{MSG_AUTH_TOKEN, seq, DEFAULT_VERSION, 0, auth})
+	_ = SendMessage(conn, &Message{MSG_AUTH_TOKEN, seq, DEFAULT_VERSION, 0, auth})
 	ReceiveMessage(conn)
 
 	log.Printf("uid:%d connected\n", uid)
@@ -225,18 +225,20 @@ func main() {
 
 		conn := ConnectServer(u + int64(i))
 		conns = append(conns, conn)
+
 		if i%100 == 0 && i > 0 {
 			time.Sleep(time.Second * 1)
 		}
 	}
+
 	time.Sleep(time.Second * 1)
-
 	fmt.Println("connected")
-
 	begin := time.Now().UnixNano()
+
 	for i := 0; i < concurrent; i++ {
 		go send(u+int64(i), gid, conns[i])
 	}
+
 	for i := 0; i < recv_count; i++ {
 		go recv(u+int64(concurrent+i), gid, conns[i+concurrent])
 	}
@@ -246,10 +248,11 @@ func main() {
 	}
 
 	end := time.Now().UnixNano()
-
 	var tps int64 = 0
+
 	if end-begin > 0 {
 		tps = int64(1000*1000*1000*concurrent*count) / (end - begin)
 	}
+
 	fmt.Println("tps:", tps)
 }
