@@ -286,7 +286,7 @@ func (auth *AuthenticationToken) ToData() []byte {
 
 func (auth *AuthenticationToken) FromData(buff []byte) bool {
 	var l int8
-	if (len(buff) <= 3) {
+	if len(buff) <= 3 {
 		return false
 	}
 	auth.platform_id = int8(buff[0])
@@ -304,11 +304,11 @@ func (auth *AuthenticationToken) FromData(buff []byte) bool {
 	if int(l) > buffer.Len() || int(l) < 0 {
 		return false
 	}
-	device_id := make([]byte, l)
-	_, _ = buffer.Read(device_id)
+	deviceId := make([]byte, l)
+	_, _ = buffer.Read(deviceId)
 
 	auth.token = string(token)
-	auth.device_id = string(device_id)
+	auth.device_id = string(deviceId)
 	return true
 }
 
@@ -357,14 +357,14 @@ func (message *RTMessage) ToData() []byte {
 	return buf
 }
 
-func (rt *RTMessage) FromData(buff []byte) bool {
+func (message *RTMessage) FromData(buff []byte) bool {
 	if len(buff) < 16 {
 		return false
 	}
 	buffer := bytes.NewBuffer(buff)
-	_ = binary.Read(buffer, binary.BigEndian, &rt.sender)
-	_ = binary.Read(buffer, binary.BigEndian, &rt.receiver)
-	rt.content = string(buff[16:])
+	_ = binary.Read(buffer, binary.BigEndian, &message.sender)
+	_ = binary.Read(buffer, binary.BigEndian, &message.receiver)
+	message.content = string(buff[16:])
 	return true
 }
 
@@ -386,15 +386,15 @@ func (message *IMMessage) ToDataV0() []byte {
 	return buf
 }
 
-func (im *IMMessage) FromDataV0(buff []byte) bool {
+func (message *IMMessage) FromDataV0(buff []byte) bool {
 	if len(buff) < 20 {
 		return false
 	}
 	buffer := bytes.NewBuffer(buff)
-	_ = binary.Read(buffer, binary.BigEndian, &im.sender)
-	_ = binary.Read(buffer, binary.BigEndian, &im.receiver)
-	_ = binary.Read(buffer, binary.BigEndian, &im.msgid)
-	im.content = string(buff[20:])
+	_ = binary.Read(buffer, binary.BigEndian, &message.sender)
+	_ = binary.Read(buffer, binary.BigEndian, &message.receiver)
+	_ = binary.Read(buffer, binary.BigEndian, &message.msgid)
+	message.content = string(buff[20:])
 	return true
 }
 
@@ -409,32 +409,32 @@ func (message *IMMessage) ToDataV1() []byte {
 	return buf
 }
 
-func (im *IMMessage) FromDataV1(buff []byte) bool {
+func (message *IMMessage) FromDataV1(buff []byte) bool {
 	if len(buff) < 24 {
 		return false
 	}
 	buffer := bytes.NewBuffer(buff)
-	_ = binary.Read(buffer, binary.BigEndian, &im.sender)
-	_ = binary.Read(buffer, binary.BigEndian, &im.receiver)
-	_ = binary.Read(buffer, binary.BigEndian, &im.timestamp)
-	_ = binary.Read(buffer, binary.BigEndian, &im.msgid)
-	im.content = string(buff[24:])
+	_ = binary.Read(buffer, binary.BigEndian, &message.sender)
+	_ = binary.Read(buffer, binary.BigEndian, &message.receiver)
+	_ = binary.Read(buffer, binary.BigEndian, &message.timestamp)
+	_ = binary.Read(buffer, binary.BigEndian, &message.msgid)
+	message.content = string(buff[24:])
 	return true
 }
 
-func (im *IMMessage) ToData(version int) []byte {
+func (message *IMMessage) ToData(version int) []byte {
 	if version == 0 {
-		return im.ToDataV0()
+		return message.ToDataV0()
 	} else {
-		return im.ToDataV1()
+		return message.ToDataV1()
 	}
 }
 
-func (im *IMMessage) FromData(version int, buff []byte) bool {
+func (message *IMMessage) FromData(version int, buff []byte) bool {
 	if version == 0 {
-		return im.FromDataV0(buff)
+		return message.FromDataV0(buff)
 	} else {
-		return im.FromDataV1(buff)
+		return message.FromDataV1(buff)
 	}
 }
 

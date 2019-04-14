@@ -75,12 +75,12 @@ func (amsg *AppMessage) ToData() []byte {
 	_ = binary.Write(buffer, binary.BigEndian, amsg.msgid)
 	_ = binary.Write(buffer, binary.BigEndian, amsg.device_id)
 	_ = binary.Write(buffer, binary.BigEndian, amsg.timestamp)
-	mbuffer := new(bytes.Buffer)
-	WriteMessage(mbuffer, amsg.msg)
-	msg_buf := mbuffer.Bytes()
-	var l int16 = int16(len(msg_buf))
+	mBuffer := new(bytes.Buffer)
+	WriteMessage(mBuffer, amsg.msg)
+	msgBuf := mBuffer.Bytes()
+	var l int16 = int16(len(msgBuf))
 	_ = binary.Write(buffer, binary.BigEndian, l)
-	buffer.Write(msg_buf)
+	buffer.Write(msgBuf)
 
 	buf := buffer.Bytes()
 	return buf
@@ -104,12 +104,12 @@ func (amsg *AppMessage) FromData(buff []byte) bool {
 		return false
 	}
 
-	msg_buf := make([]byte, l)
-	_, _ = buffer.Read(msg_buf)
+	msgBuf := make([]byte, l)
+	_, _ = buffer.Read(msgBuf)
 
-	mbuffer := bytes.NewBuffer(msg_buf)
+	mBuffer := bytes.NewBuffer(msgBuf)
 	//recusive
-	msg := ReceiveMessage(mbuffer)
+	msg := ReceiveMessage(mBuffer)
 	if msg == nil {
 		return false
 	}

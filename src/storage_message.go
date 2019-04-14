@@ -143,12 +143,12 @@ func (emsg *EMessage) ToData() []byte {
 	buffer := new(bytes.Buffer)
 	_ = binary.Write(buffer, binary.BigEndian, emsg.msgid)
 	_ = binary.Write(buffer, binary.BigEndian, emsg.device_id)
-	mbuffer := new(bytes.Buffer)
-	WriteMessage(mbuffer, emsg.msg)
-	msg_buf := mbuffer.Bytes()
-	var l int16 = int16(len(msg_buf))
+	mBuffer := new(bytes.Buffer)
+	WriteMessage(mBuffer, emsg.msg)
+	msgBuf := mBuffer.Bytes()
+	var l int16 = int16(len(msgBuf))
 	_ = binary.Write(buffer, binary.BigEndian, l)
-	buffer.Write(msg_buf)
+	buffer.Write(msgBuf)
 	buf := buffer.Bytes()
 	return buf
 
@@ -168,16 +168,17 @@ func (emsg *EMessage) FromData(buff []byte) bool {
 		return false
 	}
 
-	msg_buf := make([]byte, l)
-	buffer.Read(msg_buf)
-	mbuffer := bytes.NewBuffer(msg_buf)
+	msgBuf := make([]byte, l)
+	_, _ = buffer.Read(msgBuf)
+	mBuffer := bytes.NewBuffer(msgBuf)
 	//recusive
-	msg := ReceiveMessage(mbuffer)
+	msg := ReceiveMessage(mBuffer)
+
 	if msg == nil {
 		return false
 	}
-	emsg.msg = msg
 
+	emsg.msg = msg
 	return true
 }
 
@@ -195,7 +196,7 @@ func (batch *MessageBatch) ToData() []byte {
 	_ = binary.Write(buffer, binary.BigEndian, count)
 
 	for _, m := range batch.msgs {
-		SendMessage(buffer, m)
+		_ = SendMessage(buffer, m)
 	}
 
 	buf := buffer.Bytes()
@@ -505,11 +506,11 @@ func (sae *SAEMessage) FromData(buff []byte) bool {
 		return false
 	}
 
-	msg_buf := make([]byte, l)
-	_, _ = buffer.Read(msg_buf)
-	mbuffer := bytes.NewBuffer(msg_buf)
+	msgBuf := make([]byte, l)
+	_, _ = buffer.Read(msgBuf)
+	mBuffer := bytes.NewBuffer(msgBuf)
 	//recusive
-	msg := ReceiveMessage(mbuffer)
+	msg := ReceiveMessage(mBuffer)
 	if msg == nil {
 		return false
 	}
