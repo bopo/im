@@ -380,9 +380,9 @@ func DispatchAppMessage(amsg *AppMessage) {
 
 func DispatchRoomMessage(amsg *AppMessage) {
 	log.Info("dispatch room message", Command(amsg.msg.cmd))
-	room_id := amsg.receiver
+	roomId := amsg.receiver
 	route := app_route.FindOrAddRoute(amsg.appid)
-	clients := route.FindRoomClientSet(room_id)
+	clients := route.FindRoomClientSet(roomId)
 
 	if len(clients) == 0 {
 		log.Infof("can't dispatch room message, appid:%d room id:%d cmd:%s", amsg.appid, amsg.receiver, Command(amsg.msg.cmd))
@@ -397,30 +397,35 @@ func DispatchGroupMessage(amsg *AppMessage) {
 	now := time.Now().UnixNano()
 	d := now - amsg.timestamp
 	log.Infof("dispatch group message:%s %d %d", Command(amsg.msg.cmd), amsg.msg.flag, d)
+
 	if d > int64(time.Second) {
 		log.Warning("dispatch group message slow...")
 	}
 
 	group := group_manager.FindGroup(amsg.receiver)
+
 	if group == nil {
 		log.Warningf("can't dispatch group message, appid:%d group id:%d", amsg.appid, amsg.receiver)
 		return
 	}
 
 	route := app_route.FindRoute(amsg.appid)
+
 	if route == nil {
 		log.Warningf("can't dispatch app message, appid:%d uid:%d cmd:%s", amsg.appid, amsg.receiver, Command(amsg.msg.cmd))
 		return
 	}
 
 	members := group.Members()
+
 	for member := range members {
 		clients := route.FindClientSet(member)
+
 		if len(clients) == 0 {
 			continue
 		}
 
-		for c, _ := range (clients) {
+		for c, _ := range clients {
 			c.EnqueueNonBlockMessage(amsg.msg)
 		}
 	}
@@ -455,8 +460,8 @@ func StartHttpServer(addr string) {
 	http.HandleFunc("/dequeue_message", DequeueMessage)
 
 	handler := loggingHandler{http.DefaultServeMux}
-
 	err := http.ListenAndServe(addr, handler)
+
 	if err != nil {
 		log.Fatal("http server err:", err)
 	}
@@ -488,15 +493,17 @@ func main() {
 	fmt.Printf("Version:     %s\nBuilt:       %s\nGo version:  %s\nGit branch:  %s\nGit commit:  %s\n", VERSION, BUILD_TIME, GO_VERSION, GIT_BRANCH, GIT_COMMIT_ID)
 	rand.Seed(time.Now().UnixNano())
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	flag.Parse()
+
 	if len(flag.Args()) == 0 {
 		fmt.Println("usage: im config")
 		return
 	}
 
 	config = read_cfg(flag.Args()[0])
-	log.Infof("port:%d\n", config.port)
 
+	log.Infof("port:%d\n", config.port)
 	log.Infof("redis address:%s password:%s db:%d\n",
 		config.redis_address, config.redis_password, config.redis_db)
 
@@ -583,8 +590,8 @@ func main() {
 
 	group_manager = NewGroupManager()
 	group_manager.Start()
-
 	group_message_delivers = make([]*GroupMessageDeliver, config.group_deliver_count)
+
 	for i := 0; i < config.group_deliver_count; i++ {
 		q := fmt.Sprintf("q%d", i)
 		r := path.Join(config.pending_root, q)
@@ -607,6 +614,7 @@ func main() {
 	if config.ssl_port > 0 && len(config.cert_file) > 0 && len(config.key_file) > 0 {
 		go ListenSSL(config.ssl_port, config.cert_file, config.key_file)
 	}
+
 	ListenClient()
 	log.Infof("exit")
 }

@@ -238,7 +238,7 @@ func (client *Connection) EnqueueMessages(msgs []*Message) bool {
 // 根据连接类型获取消息
 func (client *Connection) read() *Message {
 	if conn, ok := client.conn.(net.Conn); ok {
-		conn.SetReadDeadline(time.Now().Add(CLIENT_TIMEOUT * time.Second))
+		_ = conn.SetReadDeadline(time.Now().Add(CLIENT_TIMEOUT * time.Second))
 		return ReceiveClientMessage(conn)
 	} else if conn, ok := client.conn.(engineio.Conn); ok {
 		return ReadEngineIOMessage(conn)
@@ -257,7 +257,7 @@ func (client *Connection) send(msg *Message) {
 			log.Info("can't write data to blocked socket")
 			return
 		}
-		conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
+		_ = conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
 		err := SendMessage(conn, msg)
 		if err != nil {
 			atomic.AddInt32(&client.tc, 1)
@@ -283,10 +283,10 @@ func (client *Connection) send(msg *Message) {
 // 根据连接类型关闭
 func (client *Connection) close() {
 	if conn, ok := client.conn.(net.Conn); ok {
-		conn.Close()
+		_ = conn.Close()
 	} else if conn, ok := client.conn.(engineio.Conn); ok {
 		//bug:https://github.com/googollee/go-engine.io/issues/34
-		conn.Close()
+		_ = conn.Close()
 	} else if conn, ok := client.conn.(*websocket.Conn); ok {
 		conn.Close()
 	}

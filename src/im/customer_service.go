@@ -105,12 +105,12 @@ func (cs *CustomerService) GetLastSellerID(appid, uid, store_id int64) int64 {
 
 	key := fmt.Sprintf("users_%d_%d_%d", appid, uid, store_id)
 
-	seller_id, err := redis.Int64(conn.Do("GET", key))
+	sellerId, err := redis.Int64(conn.Do("GET", key))
 	if err != nil {
 		log.Error("get last seller id err:", err)
 		return 0
 	}
-	return seller_id
+	return sellerId
 }
 
 func (cs *CustomerService) SetLastSellerID(appid, uid, store_id, seller_id int64) {
@@ -166,12 +166,12 @@ func (cs *CustomerService) GetSellerID(store_id int64) int64 {
 
 	key := fmt.Sprintf("stores_seller_%d", store_id)
 
-	staff_id, err := redis.Int64(conn.Do("SRANDMEMBER", key))
+	staffId, err := redis.Int64(conn.Do("SRANDMEMBER", key))
 	if err != nil {
 		log.Error("srandmember err:", err)
 		return 0
 	}
-	return staff_id
+	return staffId
 
 }
 
@@ -188,18 +188,18 @@ func (cs *CustomerService) GetOrderSellerID(store_id int64) int64 {
 	}
 
 	log.Info("zrange:", r, key)
-	var seller_id int64
-	_, err = redis.Scan(r, &seller_id)
+	var sellerId int64
+	_, err = redis.Scan(r, &sellerId)
 	if err != nil {
 		log.Error("scan err:", err)
 		return 0
 	}
 
-	_, err = conn.Do("ZINCRBY", key, 1, seller_id)
+	_, err = conn.Do("ZINCRBY", key, 1, sellerId)
 	if err != nil {
 		log.Error("zincrby err:", err)
 	}
-	return seller_id
+	return sellerId
 }
 
 //随机获取一个在线的销售人员
@@ -209,12 +209,12 @@ func (cs *CustomerService) GetOnlineSellerID(store_id int64) int64 {
 
 	key := fmt.Sprintf("stores_online_seller_%d", store_id)
 
-	staff_id, err := redis.Int64(conn.Do("SRANDMEMBER", key))
+	staffId, err := redis.Int64(conn.Do("SRANDMEMBER", key))
 	if err != nil {
 		log.Error("srandmember err:", err)
 		return 0
 	}
-	return staff_id
+	return staffId
 }
 
 func (cs *CustomerService) IsOnline(store_id int64, seller_id int64) bool {
@@ -249,15 +249,15 @@ func (cs *CustomerService) IsOnline(store_id int64, seller_id int64) bool {
 }
 
 func (cs *CustomerService) HandleUpdate(data string) {
-	store_id, err := strconv.ParseInt(data, 10, 64)
+	storeId, err := strconv.ParseInt(data, 10, 64)
 	if err != nil {
 		log.Info("error:", err)
 		return
 	}
-	log.Infof("store:%d update", store_id)
+	log.Infof("store:%d update", storeId)
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
-	delete(cs.stores, store_id)
+	delete(cs.stores, storeId)
 }
 
 func (cs *CustomerService) Clear() {

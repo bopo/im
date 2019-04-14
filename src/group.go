@@ -176,7 +176,7 @@ func DeleteGroup(db *sql.DB, group_id int64) bool {
 		goto ROLLBACK
 	}
 
-	tx.Commit()
+	_ = tx.Commit()
 	return true
 
 ROLLBACK:
