@@ -19,9 +19,15 @@ distclean: clean
 	rm -rf bin
 	rm -rf var
 
+test:
+	py.test -v ./tests
+
 init:
 	mkdir -p ./var/log/ims
 	mkdir -p ./var/log/imr
 	mkdir -p ./var/log/im
 	mkdir -p ./var/tmp/im
 	mkdir -p ./var/tmp/pending
+
+start: init
+	honcho start

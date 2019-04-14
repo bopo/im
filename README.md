@@ -13,6 +13,7 @@
 1. 安装go编译环境
 
    参考链接:https://golang.org/doc/install
+   pip install honcho redis pymysql mongo pytest
 
 2. 下载im_service代码
 
