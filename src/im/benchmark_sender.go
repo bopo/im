@@ -77,7 +77,7 @@ func send(uid int64) {
 	seq := 1
 
 	auth := &AuthenticationToken{token: token, platform_id: 1, device_id: "00000000"}
-	SendMessage(conn, &Message{cmd: MSG_AUTH_TOKEN, seq: seq, version: DEFAULT_VERSION, body: auth})
+	_ = SendMessage(conn, &Message{cmd: MSG_AUTH_TOKEN, seq: seq, version: DEFAULT_VERSION, body: auth})
 	ReceiveMessage(conn)
 
 	for i := 0; i < 18000; i++ {
@@ -87,7 +87,7 @@ func send(uid int64) {
 		content := fmt.Sprintf("test....%d", i)
 		seq++
 		msg := &Message{MSG_IM, seq, DEFAULT_VERSION, 0, &IMMessage{uid, receiver, 0, int32(i), content}}
-		SendMessage(conn, msg)
+		_ = SendMessage(conn, msg)
 		for {
 			ack := ReceiveMessage(conn)
 			if ack.cmd == MSG_ACK {

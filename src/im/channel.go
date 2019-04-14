@@ -279,7 +279,7 @@ func (channel *Channel) ReSubscribe(conn *net.TCPConn, seq int) int {
 
 			seq = seq + 1
 			msg.seq = seq
-			SendMessage(conn, msg)
+			_ = SendMessage(conn, msg)
 		}
 	}
 	return seq
@@ -291,7 +291,7 @@ func (channel *Channel) ReSubscribeRoom(conn *net.TCPConn, seq int) int {
 		msg := &Message{cmd: MSG_SUBSCRIBE_ROOM, body: id}
 		seq = seq + 1
 		msg.seq = seq
-		SendMessage(conn, msg)
+		_ = SendMessage(conn, msg)
 	}
 	return seq
 }
@@ -299,7 +299,7 @@ func (channel *Channel) ReSubscribeRoom(conn *net.TCPConn, seq int) int {
 func (channel *Channel) RunOnce(conn *net.TCPConn) {
 	defer conn.Close()
 
-	closed_ch := make(chan bool)
+	closedCh := make(chan bool)
 	seq := 0
 	seq = channel.ReSubscribe(conn, seq)
 	seq = channel.ReSubscribeRoom(conn, seq)
@@ -308,7 +308,7 @@ func (channel *Channel) RunOnce(conn *net.TCPConn) {
 		for {
 			msg := ReceiveMessage(conn)
 			if msg == nil {
-				close(closed_ch)
+				close(closedCh)
 				return
 			}
 			log.Info("channel recv message:", Command(msg.cmd))
@@ -335,7 +335,7 @@ func (channel *Channel) RunOnce(conn *net.TCPConn) {
 
 	for {
 		select {
-		case _ = <-closed_ch:
+		case _ = <-closedCh:
 			log.Info("channel closed")
 			return
 		case msg := <-channel.wt:

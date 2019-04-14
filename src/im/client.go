@@ -40,10 +40,10 @@ func NewClient(conn interface{}) *Client {
 	//初始化Connection
 	client.conn = conn // conn is net.Conn or engineio.Conn
 
-	if net_conn, ok := conn.(net.Conn); ok {
-		addr := net_conn.LocalAddr()
-		if taddr, ok := addr.(*net.TCPAddr); ok {
-			ip4 := taddr.IP.To4()
+	if netConn, ok := conn.(net.Conn); ok {
+		addr := netConn.LocalAddr()
+		if tAddr, ok := addr.(*net.TCPAddr); ok {
+			ip4 := tAddr.IP.To4()
 			client.public_ip = int32(ip4[0])<<24 | int32(ip4[1])<<16 | int32(ip4[2])<<8 | int32(ip4[3])
 		}
 	}
@@ -178,9 +178,9 @@ func (client *Client) HandleAuthToken(login *AuthenticationToken, version int) {
 		}
 	}
 
-	is_mobile := login.platform_id == PLATFORM_IOS || login.platform_id == PLATFORM_ANDROID
+	isMobile := login.platform_id == PLATFORM_IOS || login.platform_id == PLATFORM_ANDROID
 	online := true
-	if on && !is_mobile {
+	if on && !isMobile {
 		online = false
 	}
 
@@ -230,7 +230,7 @@ func (client *Client) HandleACK(ack *MessageACK) {
 func (client *Client) SendMessages(seq int) int {
 	var messages *list.List
 	client.mutex.Lock()
-	if (client.messages.Len() == 0) {
+	if client.messages.Len() == 0 {
 		client.mutex.Unlock()
 		return seq
 	}
@@ -277,7 +277,7 @@ func (client *Client) Write() {
 			vmsg := &Message{msg.cmd, seq, client.version, msg.flag, msg.body}
 			client.send(vmsg)
 		case messages := <-client.pwt:
-			for _, msg := range (messages) {
+			for _, msg := range messages {
 				if msg.cmd == MSG_RT || msg.cmd == MSG_IM || msg.cmd == MSG_GROUP_IM {
 					atomic.AddInt64(&server_summary.out_message_count, 1)
 				}
