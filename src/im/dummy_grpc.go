@@ -19,6 +19,5 @@
 
 package main
 
-//StartRPCServer
 func StartRPCServer(addr string) {
 }

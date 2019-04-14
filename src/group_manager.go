@@ -32,26 +32,25 @@ import _ "github.com/go-sql-driver/mysql"
 import log "github.com/golang/glog"
 
 //同redis的长链接保持5minute的心跳
-const SUBSCRIBE_HEATBEAT = 5 * 60
+const SUBSCRIBE_HEATBEAT = 5*60
 
-// 群组管理
+
 type GroupManager struct {
-	mutex     sync.Mutex
-	groups    map[int64]*Group
-	ping      string
+	mutex  sync.Mutex
+	groups map[int64]*Group
+	ping     string
 	action_id int64
 	dirty     bool
 }
 
-// 新建群组管理
 func NewGroupManager() *GroupManager {
 	now := time.Now().Unix()
 	r := fmt.Sprintf("ping_%d", now)
 	for i := 0; i < 4; i++ {
 		n := rand.Int31n(26)
-		r = r + string('a'+n)
+		r = r + string('a' + n)
 	}
-
+	
 	m := new(GroupManager)
 	m.groups = make(map[int64]*Group)
 	m.ping = r
@@ -60,35 +59,32 @@ func NewGroupManager() *GroupManager {
 	return m
 }
 
-// 获取群组列表
-func (groupManager *GroupManager) GetGroups() []*Group {
-	groupManager.mutex.Lock()
-	defer groupManager.mutex.Unlock()
+func (group_manager *GroupManager) GetGroups() []*Group{
+	group_manager.mutex.Lock()
+	defer group_manager.mutex.Unlock()
 
-	groups := make([]*Group, 0, len(groupManager.groups))
-	for _, group := range (groupManager.groups) {
+	groups := make([]*Group, 0, len(group_manager.groups))
+	for _, group := range(group_manager.groups) {
 		groups = append(groups, group)
 	}
 	return groups
 }
 
-// 查找群组
-func (groupManager *GroupManager) FindGroup(gid int64) *Group {
-	groupManager.mutex.Lock()
-	defer groupManager.mutex.Unlock()
-	if group, ok := groupManager.groups[gid]; ok {
+func (group_manager *GroupManager) FindGroup(gid int64) *Group {
+	group_manager.mutex.Lock()
+	defer group_manager.mutex.Unlock()
+	if group, ok := group_manager.groups[gid]; ok {
 		return group
 	}
 	return nil
 }
 
-// 查找用户群组
-func (groupManager *GroupManager) FindUserGroups(appid int64, uid int64) []*Group {
-	groupManager.mutex.Lock()
-	defer groupManager.mutex.Unlock()
+func (group_manager *GroupManager) FindUserGroups(appid int64, uid int64) []*Group {
+	group_manager.mutex.Lock()
+	defer group_manager.mutex.Unlock()
 
 	groups := make([]*Group, 0, 4)
-	for _, group := range groupManager.groups {
+	for _, group := range group_manager.groups {
 		if group.appid == appid && group.IsMember(uid) {
 			groups = append(groups, group)
 		}
@@ -96,8 +92,7 @@ func (groupManager *GroupManager) FindUserGroups(appid int64, uid int64) []*Grou
 	return groups
 }
 
-// 创建群组句柄
-func (groupManager *GroupManager) HandleCreate(data string) {
+func (group_manager *GroupManager) HandleCreate(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 3 {
 		log.Info("message error:", data)
@@ -119,40 +114,38 @@ func (groupManager *GroupManager) HandleCreate(data string) {
 		return
 	}
 
-	groupManager.mutex.Lock()
-	defer groupManager.mutex.Unlock()
+	group_manager.mutex.Lock()
+	defer group_manager.mutex.Unlock()
 
-	if _, ok := groupManager.groups[gid]; ok {
+	if _, ok := group_manager.groups[gid]; ok {
 		log.Infof("group:%d exists\n", gid)
 	}
 	log.Infof("create group:%d appid:%d", gid, appid)
 	if super != 0 {
-		groupManager.groups[gid] = NewSuperGroup(gid, appid, nil)
+		group_manager.groups[gid] = NewSuperGroup(gid, appid, nil)
 	} else {
-		groupManager.groups[gid] = NewGroup(gid, appid, nil)
+		group_manager.groups[gid] = NewGroup(gid, appid, nil)
 	}
 }
 
-// 解散群组操作
-func (groupManager *GroupManager) HandleDisband(data string) {
+func (group_manager *GroupManager) HandleDisband(data string) {
 	gid, err := strconv.ParseInt(data, 10, 64)
 	if err != nil {
 		log.Info("error:", err)
 		return
 	}
 
-	groupManager.mutex.Lock()
-	defer groupManager.mutex.Unlock()
-	if _, ok := groupManager.groups[gid]; ok {
+	group_manager.mutex.Lock()
+	defer group_manager.mutex.Unlock()
+	if _, ok := group_manager.groups[gid]; ok {
 		log.Info("disband group:", gid)
-		delete(groupManager.groups, gid)
+		delete(group_manager.groups, gid)
 	} else {
 		log.Infof("group:%d nonexists\n", gid)
 	}
 }
 
-// 升级群组操作
-func (groupManager *GroupManager) HandleUpgrade(data string) {
+func (group_manager *GroupManager) HandleUpgrade(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 3 {
 		log.Info("message error:", data)
@@ -178,17 +171,17 @@ func (groupManager *GroupManager) HandleUpgrade(data string) {
 		log.Warning("super group can't transfer to nomal group")
 		return
 	}
-	group := groupManager.FindGroup(gid)
+	group := group_manager.FindGroup(gid)
 	if group != nil {
-		group.super = super == 1
+		group.super = (super == 1)
 		log.Infof("upgrade group appid:%d gid:%d super:%d", appid, gid, super)
 	} else {
 		log.Infof("can't find group:%d\n", gid)
 	}
 }
 
-// 群组添加用户操作
-func (groupManager *GroupManager) HandleMemberAdd(data string) {
+
+func (group_manager *GroupManager) HandleMemberAdd(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 2 {
 		log.Info("message error")
@@ -205,7 +198,7 @@ func (groupManager *GroupManager) HandleMemberAdd(data string) {
 		return
 	}
 
-	group := groupManager.FindGroup(gid)
+	group := group_manager.FindGroup(gid)
 	if group != nil {
 		timestamp := int(time.Now().Unix())
 		group.AddMember(uid, timestamp)
@@ -215,8 +208,7 @@ func (groupManager *GroupManager) HandleMemberAdd(data string) {
 	}
 }
 
-// 群组删除用户操作
-func (groupManager *GroupManager) HandleMemberRemove(data string) {
+func (group_manager *GroupManager) HandleMemberRemove(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 2 {
 		log.Info("message error")
@@ -233,7 +225,7 @@ func (groupManager *GroupManager) HandleMemberRemove(data string) {
 		return
 	}
 
-	group := groupManager.FindGroup(gid)
+	group := group_manager.FindGroup(gid)
 	if group != nil {
 		group.RemoveMember(uid)
 		log.Infof("remove group member gid:%d uid:%d", gid, uid)
@@ -242,8 +234,7 @@ func (groupManager *GroupManager) HandleMemberRemove(data string) {
 	}
 }
 
-// 群组禁言操作
-func (groupManager *GroupManager) HandleMute(data string) {
+func (group_manager *GroupManager) HandleMute(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 3 {
 		log.Info("message error:", data)
@@ -265,7 +256,7 @@ func (groupManager *GroupManager) HandleMute(data string) {
 		return
 	}
 
-	group := groupManager.FindGroup(gid)
+	group := group_manager.FindGroup(gid)
 	if group != nil {
 		group.SetMemberMute(uid, mute != 0)
 		log.Infof("set group member gid:%d uid:%d mute:%d", gid, uid, mute)
@@ -274,58 +265,56 @@ func (groupManager *GroupManager) HandleMute(data string) {
 	}
 }
 
-//保证 ACTION ID 的顺序性
-func (groupManager *GroupManager) parseAction(data string) (bool, int64, int64, string) {
+//保证action id的顺序性
+func (group_manager *GroupManager) parseAction(data string) (bool, int64, int64, string) {
 	arr := strings.SplitN(data, ":", 3)
 	if len(arr) != 3 {
 		log.Warning("group action error:", data)
 		return false, 0, 0, ""
 	}
 
-	prevId, err := strconv.ParseInt(arr[0], 10, 64)
+	prev_id, err := strconv.ParseInt(arr[0], 10, 64)
 	if err != nil {
 		log.Info("error:", err, data)
 		return false, 0, 0, ""
 	}
 
-	actionId, err := strconv.ParseInt(arr[1], 10, 64)
+	action_id, err := strconv.ParseInt(arr[1], 10, 64)
 	if err != nil {
 		log.Info("error:", err, data)
 		return false, 0, 0, ""
 	}
-	return true, prevId, actionId, arr[2]
+	return true, prev_id, action_id, arr[2]
 }
 
-// 各种操作调度函数
-func (groupManager *GroupManager) handleAction(data string, channel string) {
-	r, prevId, actionId, content := groupManager.parseAction(data)
+func (group_manager *GroupManager) handleAction(data string, channel string) {
+	r, prev_id, action_id, content := group_manager.parseAction(data)
 	if r {
-		log.Info("group action:", prevId, actionId, groupManager.action_id, " ", channel)
-		if groupManager.action_id != prevId {
+		log.Info("group action:", prev_id, action_id, group_manager.action_id, " ", channel)
+		if group_manager.action_id != prev_id {
 			//reload later
-			groupManager.dirty = true
-			log.Warning("action nonsequence:", groupManager.action_id, prevId, actionId)
+			group_manager.dirty = true
+			log.Warning("action nonsequence:", group_manager.action_id, prev_id, action_id)
 		}
 
 		if channel == "group_create" {
-			groupManager.HandleCreate(content)
+			group_manager.HandleCreate(content)
 		} else if channel == "group_disband" {
-			groupManager.HandleDisband(content)
+			group_manager.HandleDisband(content)
 		} else if channel == "group_member_add" {
-			groupManager.HandleMemberAdd(content)
+			group_manager.HandleMemberAdd(content)
 		} else if channel == "group_member_remove" {
-			groupManager.HandleMemberRemove(content)
+			group_manager.HandleMemberRemove(content)
 		} else if channel == "group_upgrade" {
-			groupManager.HandleUpgrade(content)
+			group_manager.HandleUpgrade(content)
 		} else if channel == "group_member_mute" {
-			groupManager.HandleMute(content)
+			group_manager.HandleMute(content)
 		}
-		groupManager.action_id = actionId
-	}
+		group_manager.action_id = action_id
+	}	
 }
 
-// 刷新群组
-func (groupManager *GroupManager) ReloadGroup() bool {
+func (group_manager *GroupManager) ReloadGroup() bool {
 	log.Info("reload group...")
 	db, err := sql.Open("mysql", config.mysqldb_datasource)
 	if err != nil {
@@ -340,15 +329,14 @@ func (groupManager *GroupManager) ReloadGroup() bool {
 		return false
 	}
 
-	groupManager.mutex.Lock()
-	defer groupManager.mutex.Unlock()
-	groupManager.groups = groups
+	group_manager.mutex.Lock()
+	defer group_manager.mutex.Unlock()
+	group_manager.groups = groups
 
 	return true
 }
 
-// 活动群组操作ID
-func (groupManager *GroupManager) getActionID() (int64, error) {
+func (group_manager *GroupManager) getActionID() (int64, error) {
 	conn := redis_pool.Get()
 	defer conn.Close()
 
@@ -371,62 +359,60 @@ func (groupManager *GroupManager) getActionID() (int64, error) {
 			return 0, err
 		}
 
-		actionId, err := strconv.ParseInt(arr[1], 10, 64)
+		action_id, err := strconv.ParseInt(arr[1], 10, 64)
 		if err != nil {
 			log.Info("error:", err, actions)
-			return 0, err
+			return 0, err			
 		}
-		return actionId, nil
+		return action_id, nil
 	}
 }
 
-// 加载群组信息
-func (groupManager *GroupManager) load() {
+func (group_manager *GroupManager) load() {
 	//循环直到成功
 	for {
-		actionId, err := groupManager.getActionID()
+		action_id, err := group_manager.getActionID()
 		if err != nil {
 			time.Sleep(1 * time.Second)
 			continue
 		}
-
-		r := groupManager.ReloadGroup()
+		
+		r := group_manager.ReloadGroup()
 		if !r {
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
-		groupManager.action_id = actionId
-		groupManager.dirty = false
-		log.Info("group action id:", actionId)
+		group_manager.action_id = action_id
+		group_manager.dirty = false
+		log.Info("group action id:", action_id)
 		break
 	}
 }
 
 //检查当前的action id 是否变更，变更时则重新加载群组结构
-func (groupManager *GroupManager) checkActionID() {
-	actionId, err := groupManager.getActionID()
+func (group_manager *GroupManager) checkActionID() {
+	action_id, err := group_manager.getActionID()
 	if err != nil {
 		//load later
-		groupManager.dirty = true
+		group_manager.dirty = true
 		return
 	}
 
-	if actionId != groupManager.action_id {
-		r := groupManager.ReloadGroup()
+	if action_id != group_manager.action_id {
+		r := group_manager.ReloadGroup()
 		if r {
-			groupManager.dirty = false
-			groupManager.action_id = actionId
+			group_manager.dirty = false
+			group_manager.action_id = action_id
 		} else {
 			//load later
-			groupManager.dirty = true
+			group_manager.dirty = true
 		}
 	}
 }
 
-// 单个运行
-func (groupManager *GroupManager) RunOnce() bool {
-	t := redis.DialReadTimeout(time.Second * SUBSCRIBE_HEATBEAT)
+func (group_manager *GroupManager) RunOnce() bool {
+	t := redis.DialReadTimeout(time.Second*SUBSCRIBE_HEATBEAT)
 	c, err := redis.Dial("tcp", config.redis_address, t)
 	if err != nil {
 		log.Info("dial redis error:", err)
@@ -436,43 +422,43 @@ func (groupManager *GroupManager) RunOnce() bool {
 	password := config.redis_password
 	if len(password) > 0 {
 		if _, err := c.Do("AUTH", password); err != nil {
-			_ = c.Close()
+			c.Close()
 			return false
 		}
 	}
 
 	psc := redis.PubSubConn{c}
 	psc.Subscribe("group_create", "group_disband", "group_member_add",
-		"group_member_remove", "group_upgrade", "group_member_mute", groupManager.ping)
-
-	groupManager.checkActionID()
+		"group_member_remove", "group_upgrade", "group_member_mute", group_manager.ping)
+	
+	group_manager.checkActionID()
 	for {
 		switch v := psc.Receive().(type) {
 		case redis.Message:
 			if v.Channel == "group_create" ||
 				v.Channel == "group_disband" ||
-				v.Channel == "group_member_add" ||
+				v.Channel == "group_member_add"	||
 				v.Channel == "group_member_remove" ||
 				v.Channel == "group_upgrade" ||
 				v.Channel == "group_member_mute" {
-				groupManager.handleAction(string(v.Data), v.Channel)
-			} else if v.Channel == groupManager.ping {
+				group_manager.handleAction(string(v.Data), v.Channel)
+			} else if v.Channel == group_manager.ping {
 				//check dirty
-				if groupManager.dirty {
-					actionId, err := groupManager.getActionID()
+				if group_manager.dirty {
+					action_id, err := group_manager.getActionID()
 					if err == nil {
-						r := groupManager.ReloadGroup()
+						r := group_manager.ReloadGroup()
 						if r {
-							groupManager.dirty = false
-							groupManager.action_id = actionId
+							group_manager.dirty = false
+							group_manager.action_id = action_id
 						}
 					} else {
 						log.Warning("get action id err:", err)
 					}
 				} else {
-					groupManager.checkActionID()
+					group_manager.checkActionID()
 				}
-				log.Info("group manager dirty:", groupManager.dirty)
+				log.Info("group manager dirty:", group_manager.dirty)
 			} else {
 				log.Infof("%s: message: %s\n", v.Channel, v.Data)
 			}
@@ -485,10 +471,10 @@ func (groupManager *GroupManager) RunOnce() bool {
 	}
 }
 
-func (groupManager *GroupManager) Run() {
+func (group_manager *GroupManager) Run() {
 	nsleep := 1
 	for {
-		connected := groupManager.RunOnce()
+		connected := group_manager.RunOnce()
 		if !connected {
 			nsleep *= 2
 			if nsleep > 60 {
@@ -501,25 +487,26 @@ func (groupManager *GroupManager) Run() {
 	}
 }
 
-func (groupManager *GroupManager) Ping() {
+func (group_manager *GroupManager) Ping() {
 	conn := redis_pool.Get()
 	defer conn.Close()
 
-	_, err := conn.Do("PUBLISH", groupManager.ping, "ping")
+	_, err := conn.Do("PUBLISH", group_manager.ping, "ping")
 	if err != nil {
 		log.Info("ping error:", err)
 	}
 }
 
-func (groupManager *GroupManager) PingLoop() {
+
+func (group_manager *GroupManager) PingLoop() {
 	for {
-		groupManager.Ping()
-		time.Sleep(time.Second * (SUBSCRIBE_HEATBEAT - 10))
+		group_manager.Ping()
+		time.Sleep(time.Second*(SUBSCRIBE_HEATBEAT-10))
 	}
 }
 
-func (groupManager *GroupManager) Start() {
-	groupManager.load()
-	go groupManager.Run()
-	go groupManager.PingLoop()
+func (group_manager *GroupManager) Start() {
+	group_manager.load()
+	go group_manager.Run()
+	go group_manager.PingLoop()
 }

@@ -35,9 +35,9 @@ type Store struct {
 }
 
 type CustomerService struct {
-	mutex          sync.Mutex
-	stores         map[int64]*Store
-	sellers        map[int64]int //销售员 sellerid:timestamp
+	mutex sync.Mutex
+	stores map[int64]*Store
+	sellers map[int64]int //销售员 sellerid:timestamp
 	online_sellers map[int64]int //在线的销售员 sellerid:timestamp
 }
 
@@ -105,12 +105,12 @@ func (cs *CustomerService) GetLastSellerID(appid, uid, store_id int64) int64 {
 
 	key := fmt.Sprintf("users_%d_%d_%d", appid, uid, store_id)
 
-	sellerId, err := redis.Int64(conn.Do("GET", key))
+	seller_id, err := redis.Int64(conn.Do("GET", key))
 	if err != nil {
 		log.Error("get last seller id err:", err)
 		return 0
 	}
-	return sellerId
+	return seller_id
 }
 
 func (cs *CustomerService) SetLastSellerID(appid, uid, store_id, seller_id int64) {
@@ -131,7 +131,7 @@ func (cs *CustomerService) IsExist(store_id int64, seller_id int64) bool {
 	now := int(time.Now().Unix())
 	cs.mutex.Lock()
 	if t, ok := cs.sellers[seller_id]; ok {
-		if now-t < 10*60 {
+		if now - t < 10*60 {
 			cs.mutex.Unlock()
 			return true
 		}
@@ -140,6 +140,7 @@ func (cs *CustomerService) IsExist(store_id int64, seller_id int64) bool {
 	}
 	cs.mutex.Unlock()
 
+	
 	conn := redis_pool.Get()
 	defer conn.Close()
 
@@ -166,13 +167,13 @@ func (cs *CustomerService) GetSellerID(store_id int64) int64 {
 
 	key := fmt.Sprintf("stores_seller_%d", store_id)
 
-	staffId, err := redis.Int64(conn.Do("SRANDMEMBER", key))
+	staff_id, err := redis.Int64(conn.Do("SRANDMEMBER", key))
 	if err != nil {
 		log.Error("srandmember err:", err)
 		return 0
 	}
-	return staffId
-
+	return staff_id
+	
 }
 
 func (cs *CustomerService) GetOrderSellerID(store_id int64) int64 {
@@ -188,19 +189,20 @@ func (cs *CustomerService) GetOrderSellerID(store_id int64) int64 {
 	}
 
 	log.Info("zrange:", r, key)
-	var sellerId int64
-	_, err = redis.Scan(r, &sellerId)
+	var seller_id int64
+	_, err = redis.Scan(r, &seller_id)
 	if err != nil {
 		log.Error("scan err:", err)
 		return 0
 	}
 
-	_, err = conn.Do("ZINCRBY", key, 1, sellerId)
+	_, err = conn.Do("ZINCRBY", key, 1, seller_id)
 	if err != nil {
 		log.Error("zincrby err:", err)
 	}
-	return sellerId
+	return seller_id
 }
+
 
 //随机获取一个在线的销售人员
 func (cs *CustomerService) GetOnlineSellerID(store_id int64) int64 {
@@ -209,19 +211,19 @@ func (cs *CustomerService) GetOnlineSellerID(store_id int64) int64 {
 
 	key := fmt.Sprintf("stores_online_seller_%d", store_id)
 
-	staffId, err := redis.Int64(conn.Do("SRANDMEMBER", key))
+	staff_id, err := redis.Int64(conn.Do("SRANDMEMBER", key))
 	if err != nil {
 		log.Error("srandmember err:", err)
 		return 0
 	}
-	return staffId
+	return staff_id
 }
 
 func (cs *CustomerService) IsOnline(store_id int64, seller_id int64) bool {
 	now := int(time.Now().Unix())
 	cs.mutex.Lock()
 	if t, ok := cs.online_sellers[seller_id]; ok {
-		if now-t < 10*60 {
+		if now - t < 10*60 {
 			cs.mutex.Unlock()
 			return true
 		}
@@ -232,8 +234,8 @@ func (cs *CustomerService) IsOnline(store_id int64, seller_id int64) bool {
 
 	conn := redis_pool.Get()
 	defer conn.Close()
-	key := fmt.Sprintf("stores_online_seller_%d", store_id)
-
+	key := fmt.Sprintf("stores_online_seller_%d", store_id)	
+	
 	on, err := redis.Bool(conn.Do("SISMEMBER", key, seller_id))
 	if err != nil {
 		log.Error("sismember err:", err)
@@ -249,15 +251,15 @@ func (cs *CustomerService) IsOnline(store_id int64, seller_id int64) bool {
 }
 
 func (cs *CustomerService) HandleUpdate(data string) {
-	storeId, err := strconv.ParseInt(data, 10, 64)
+	store_id, err := strconv.ParseInt(data, 10, 64)
 	if err != nil {
 		log.Info("error:", err)
 		return
 	}
-	log.Infof("store:%d update", storeId)
+	log.Infof("store:%d update", store_id)
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
-	delete(cs.stores, storeId)
+	delete(cs.stores, store_id)
 }
 
 func (cs *CustomerService) Clear() {

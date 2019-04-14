@@ -9,7 +9,9 @@ service IM {
     rpc PostGroupMessage(GroupMessage) returns(Reply) {}
     rpc PostPeerMessage(PeerMessage) returns(Reply) {}
     rpc PostSystemMessage(SystemMessage) returns(Reply) {}
+
     rpc GetNewCount(NewCountRequest) returns(NewCount) {}
+    
     rpc LoadLatestMessage(LoadLatestRequest) returns(HistoryMessage) {}
     rpc LoadHistoryMessage(LoadHistoryRequest) returns(HistoryMessage) {}
 }
