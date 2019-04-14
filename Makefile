@@ -23,11 +23,11 @@ test:
 	py.test -v ./tests
 
 init:
-	mkdir -p ./var/log/ims
-	mkdir -p ./var/log/imr
-	mkdir -p ./var/log/im
-	mkdir -p ./var/tmp/im
-	mkdir -p ./var/tmp/pending
+	mkdir -p ./runtime/log/ims
+	mkdir -p ./runtime/log/imr
+	mkdir -p ./runtime/log/im
+	mkdir -p ./runtime/tmp/im
+	mkdir -p ./runtime/tmp/pending
 
 start: init
 	honcho start
