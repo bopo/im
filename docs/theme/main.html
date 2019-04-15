@@ -62,20 +62,20 @@
         <div id="mkdocs_search_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h3 id="myModalLabel">Documentation search</h3>
+            <h3 id="myModalLabel">文档搜索</h3>
           </div>
 
           <div class="modal-body">
             <form role="form" autocomplete="off">
               <div class="form-group">
-                <input type="text" name="q" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                <input type="text" name="q" class="form-control" placeholder="请输入..." id="mkdocs-search-query">
               </div>
             </form>
             <div id="mkdocs-search-results"></div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            <button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
           </div>
         </div>
 
@@ -85,7 +85,7 @@
               <ul class="nav nav-list side-nav well sidebar-nav-fixed">
                 {% if page and page.is_homepage %}
                   <li class="main">
-                    <a href="#">Django REST framework</a>
+                    <a href="#">{{ config.site_name }}</a>
                   </li>
                 {% endif %}
 
@@ -101,10 +101,10 @@
                   {% endfor %}
                 {% endfor %}
 
-                  <div class="promo">
-                    <hr/>
-                    <div id="sidebarInclude">
-                  </div>
+                  <!-- <div class="promo"> -->
+                    <!-- <hr/> -->
+                    <!-- <div id="sidebarInclude"> -->
+                  <!-- </div> -->
               </ul>
 
             </div>
