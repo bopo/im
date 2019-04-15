@@ -18,15 +18,12 @@
 </style>
 
 <p class="badges" height=20px>
-    <iframe src="https://ghbtns.com/github-btn.html?user=encode&amp;repo=django-rest-framework&amp;type=watch&amp;count=true" class="github-star-button" allowtransparency="true" frameborder="0" scrolling="0" width="110px" height="20px"></iframe>
-
-    <a href="https://travis-ci.org/encode/django-rest-framework?branch=master">
-        <img src="https://secure.travis-ci.org/encode/django-rest-framework.svg?branch=master" class="status-badge">
+    <a href="https://travis-ci.org/bopo/im?branch=master">
+        <img src="https://secure.travis-ci.org/bopo/im.svg?branch=master" class="status-badge">
     </a>
-
-    <a href="https://pypi.org/project/djangorestframework/">
-        <img src="https://img.shields.io/pypi/v/djangorestframework.svg" class="status-badge">
-    </a>
+<!--     <a href="https://pypi.org/project/im/">
+        <img src="https://img.shields.io/pypi/v/im.svg" class="status-badge">
+    </a> -->
 </p>
 
 ---
