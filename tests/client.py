@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-import struct
+import base64
+import json
+import md5
 import socket
+import ssl
+import struct
+import sys
 import threading
 import time
-import requests
-import json
 import uuid
-import base64
-import md5
-import sys
-import ssl
+
+import requests
+
 from protocol import *
 
 KEFU_APP_ID = 1453
@@ -153,4 +155,3 @@ def recv_group_client(uid, group_id, port, handler):
 
 def recv_client(uid, port, handler):
     recv_client_(uid, port, handler)
-    

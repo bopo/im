@@ -116,5 +116,3 @@ def pack(time=None):
           '--exclude=.template '
           '--exclude=db.sqlite3 '
           '--exclude=Vagrantfile .')
-
-

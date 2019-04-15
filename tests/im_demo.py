@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-import struct
+import base64
+import json
+import select
 import socket
+import struct
 import threading
 import time
-import requests
-import json
 import uuid
-import base64
-import select
+
+import requests
 
 from im_client import Client
 

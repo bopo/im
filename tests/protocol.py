@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-import struct
+import base64
+import json
+import md5
 import socket
+import struct
+import sys
 import threading
 import time
-import requests
-import json
 import uuid
-import base64
-import md5
-import sys
+
+import requests
 
 MSG_HEARTBEAT = 1
 #MSG_AUTH = 2

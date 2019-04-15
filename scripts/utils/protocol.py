@@ -1,18 +1,8 @@
 # -*- coding: utf-8 -*-
-import base64
-import json
-import md5
-import socket
 import struct
-import sys
-import threading
-import time
-import uuid
-
-import requests
 
 MSG_HEARTBEAT = 1
-#MSG_AUTH = 2
+# MSG_AUTH = 2
 MSG_AUTH_STATUS = 3
 MSG_IM = 4
 MSG_ACK = 5
@@ -45,7 +35,7 @@ MSG_SYNC_GROUP_BEGIN = 31
 MSG_SYNC_GROUP_END = 32
 MSG_SYNC_GROUP_NOTIFY = 33
 
-MSG_SYNC_KEY  = 34
+MSG_SYNC_KEY = 34
 MSG_GROUP_SYNC_KEY = 35
 
 MSG_NOTIFICATION = 36
@@ -55,14 +45,19 @@ PLATFORM_ANDROID = 2
 
 PROTOCOL_VERSION = 1
 
-
 device_id = "f9d2a7c2-701a-11e5-9c3e-34363bd464b2"
+
+
+def byte(data):
+    return data if type(data) is bytes else data.encode('utf-8')
+
 
 class AuthenticationToken:
     def __init__(self):
         self.token = ""
         self.platform_id = PLATFORM_ANDROID
         self.device_id = device_id
+
 
 class IMMessage:
     def __init__(self):
@@ -76,33 +71,34 @@ class IMMessage:
         return str((self.sender, self.receiver, self.timestamp, self.content))
 
 
-#RoomMessage
+# RoomMessage
 class RTMessage:
     def __init__(self):
         self.sender = 0
         self.receiver = 0
         self.content = ""
+
     def __str__(self):
         return str((self.sender, self.receiver, self.content))
 
 
 def send_message(cmd, seq, msg, sock):
     if cmd == MSG_AUTH_TOKEN:
-        b = struct.pack("!BB", msg.platform_id, len(msg.token)) + msg.token + struct.pack("!B", len(msg.device_id)) + msg.device_id
+        b = struct.pack("!BB", msg.platform_id, len(msg.token)).decode() + msg.token + struct.pack("!B", len(
+            msg.device_id)).decode() + msg.device_id
         length = len(b)
         h = struct.pack("!iibbbb", length, seq, cmd, PROTOCOL_VERSION, 0, 0)
-        print h + b
-        sock.sendall(h + b)
+        sock.sendall(h + byte(b))
     elif cmd == MSG_IM or cmd == MSG_GROUP_IM:
         length = 24 + len(msg.content)
         h = struct.pack("!iibbbb", length, seq, cmd, PROTOCOL_VERSION, 0, 0)
         b = struct.pack("!qqii", msg.sender, msg.receiver, msg.timestamp, msg.msgid)
-        sock.sendall(h+b+msg.content)
+        sock.sendall(h + b + byte(msg.content))
     elif cmd == MSG_RT or cmd == MSG_ROOM_IM:
         length = 16 + len(msg.content)
         h = struct.pack("!iibbbb", length, seq, cmd, PROTOCOL_VERSION, 0, 0)
         b = struct.pack("!qq", msg.sender, msg.receiver)
-        sock.sendall(h+b+msg.content)
+        sock.sendall(h + b + byte(msg.content))
     elif cmd == MSG_ACK:
         h = struct.pack("!iibbbb", 4, seq, cmd, PROTOCOL_VERSION, 0, 0)
         b = struct.pack("!i", msg)
@@ -118,32 +114,33 @@ def send_message(cmd, seq, msg, sock):
     elif cmd == MSG_ENTER_ROOM or cmd == MSG_LEAVE_ROOM:
         h = struct.pack("!iibbbb", 8, seq, cmd, PROTOCOL_VERSION, 0, 0)
         b = struct.pack("!q", msg)
-        sock.sendall(h+b)
+        sock.sendall(h + b)
     elif cmd == MSG_SYNC or cmd == MSG_SYNC_KEY:
         h = struct.pack("!iibbbb", 8, seq, cmd, PROTOCOL_VERSION, 0, 0)
         b = struct.pack("!q", msg)
-        sock.sendall(h+b)
+        sock.sendall(h + b)
     elif cmd == MSG_SYNC_GROUP or cmd == MSG_GROUP_SYNC_KEY:
         group_id, sync_key = msg
         h = struct.pack("!iibbbb", 16, seq, cmd, PROTOCOL_VERSION, 0, 0)
         b = struct.pack("!qq", group_id, sync_key)
-        sock.sendall(h+b)
+        sock.sendall(h + b)
     else:
-        print "eeeeee"
+        print("eeeeee")
+
 
 def recv_message(sock):
     buf = sock.recv(12)
 
     if len(buf) != 12:
         return 0, 0, None
-    
+
     length, seq, cmd = struct.unpack("!iib", buf[:9])
 
     if length == 0:
         return cmd, seq, None
 
     content = sock.recv(length)
-    
+
     if len(content) != length:
         return 0, 0, None
 
@@ -177,17 +174,17 @@ def recv_message(sock):
     elif cmd == MSG_PONG:
         return cmd, seq, None
     elif cmd == MSG_SYNC_BEGIN or \
-         cmd == MSG_SYNC_END or \
-         cmd == MSG_SYNC_NOTIFY:
+            cmd == MSG_SYNC_END or \
+            cmd == MSG_SYNC_NOTIFY:
         sync_key, = struct.unpack("!q", content)
         return cmd, seq, sync_key
     elif cmd == MSG_SYNC_GROUP_BEGIN or \
-         cmd == MSG_SYNC_GROUP_END or \
-         cmd == MSG_SYNC_GROUP_NOTIFY:
+            cmd == MSG_SYNC_GROUP_END or \
+            cmd == MSG_SYNC_GROUP_NOTIFY:
         group_id, sync_key = struct.unpack("!qq", content)
         return cmd, seq, (group_id, sync_key)
     elif cmd == MSG_GROUP_NOTIFICATION:
         return cmd, seq, content
     else:
-        print "unknow cmd:", cmd
+        print("unknow cmd:", cmd)
         return cmd, seq, content

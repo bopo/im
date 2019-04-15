@@ -1,43 +1,45 @@
 # -*- coding: utf-8 -*-
 import hashlib
-import json
-import logging
 import random
 import sys
-import time
-from urllib import urlencode
-from models.user import User
 
 import redis
 
 import config
+from models.user import User
 
-rds = redis.StrictRedis(host=config.REDIS_HOST, password=config.REDIS_PASSWORD, port=config.REDIS_PORT, db=config.REDIS_DB)
-
+rds = redis.StrictRedis(host=config.REDIS_HOST, password=config.REDIS_PASSWORD, port=config.REDIS_PORT,
+                        db=config.REDIS_DB)
 
 UNICODE_ASCII_CHARACTER_SET = ('abcdefghijklmnopqrstuvwxyz'
                                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                                '0123456789')
 
+
 def random_token_generator(length=30, chars=UNICODE_ASCII_CHARACTER_SET):
     rand = random.SystemRandom()
-    return ''.join(rand.choice(chars) for x in range(length))
+    return ''.join(rand.choice(chars) for _ in range(length))
+
 
 def create_access_token():
     return random_token_generator()
 
 
 def saslprep(string):
-    return string
+    return string if type(string) is str else string.decode()
+
 
 def ha1(username, realm, password):
-    return hashlib.md5(':'.join((username, realm, saslprep(password)))).digest()
+    text = ':'.join((username, realm, saslprep(password)))
+    return hashlib.md5(bytes(text, encoding='utf-8')).hexdigest()
+
 
 def hmac(username, realm, password):
-    return ha1(username, realm, password).encode('hex')
+    return ha1(username, realm, password)
 
 
 APPID = config.APPID
+
 
 def grant_auth_token(uid, name):
     appid = APPID
@@ -49,20 +51,21 @@ def grant_auth_token(uid, name):
 
     User.save_user_access_token(rds, appid, uid, name, token)
 
-    u = "%s_%s"%(appid, uid)
+    u = "{}_{}".format(appid, uid)
     realm = "com.beetle.face"
     key = hmac(u, realm, token)
+
     User.set_turn_key(rds, appid, uid, key)
     User.set_turn_password(rds, appid, uid, token)
-        
+
     return token
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "gobelieve_auth uid name"
+        print("auth uid name")
         sys.exit(1)
 
     uid = int(sys.argv[1])
     name = sys.argv[2] if len(sys.argv) > 2 else ""
-    print grant_auth_token(uid, name)
+    print('token:', grant_auth_token(uid, name).decode())

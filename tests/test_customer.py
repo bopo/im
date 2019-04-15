@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-import struct
+import base64
+import json
+import md5
 import socket
+import struct
+import sys
 import threading
 import time
-import requests
-import json
 import uuid
-import base64
-import md5
-import sys
-from protocol import *
-from client import *
 
+import requests
+
+from client import *
+from protocol import *
 
 task = 0
 
@@ -122,4 +123,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-

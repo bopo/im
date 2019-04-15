@@ -1,14 +1,15 @@
-import struct
-import socket
-import threading
-import time
-import requests
+import base64
 import json
-import sys
+import md5
 import os
 import select
-import md5
-import base64
+import socket
+import struct
+import sys
+import threading
+import time
+
+import requests
 
 MSG_HEARTBEAT = 1
 MSG_AUTH = 2
