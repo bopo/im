@@ -17,19 +17,19 @@
 
 2. 下载im_service代码
 
-   cd $GOPATH/src/github.com/GoBelieveIO
+   cd $GOPATH/src/github.com/bopo
 
-   git clone https://github.com/GoBelieveIO/im_service.git
+   git clone https://github.com/bopo/im.git
 
 3. 安装依赖
 
-   cd im_service
+   cd im
 
    dep ensure
 
 4. 编译
 
-   cd im_service
+   cd im
     
    mkdir bin
     
@@ -51,9 +51,9 @@
 
   * 创建日志文件路径
     
-    mkdir -p ./runtime/data/logs/ims
-    mkdir -p ./runtime/data/logs/imr
-    mkdir -p ./runtime/data/logs/im
+    mkdir -p ./runtime/log/ims
+    mkdir -p ./runtime/log/imr
+    mkdir -p ./runtime/log/im
 
   * 启动im服务
 
@@ -61,13 +61,13 @@
 
     BASEDIR=\`pwd\`
 
-    nohup $BASEDIR/ims -log_dir=./logs/ims ims.cfg >./logs/ims/ims.log 2>&1 &
-    nohup $BASEDIR/imr -log_dir=./logs/imr imr.cfg >./logs/imr/imr.log 2>&1 &
-    nohup $BASEDIR/im -log_dir=./logs/im im.cfg >./logs/im/im.log 2>&1 &
+    nohup $BASEDIR/ims -log_dir=./runtime/log/ims ims.cfg >./runtime/log/ims/ims.log 2>&1 &
+    nohup $BASEDIR/imr -log_dir=./runtime/log/imr imr.cfg >./runtime/log/imr/imr.log 2>&1 &
+    nohup $BASEDIR/im -log_dir=./runtime/log/im im.cfg >./runtime/log/im/im.log 2>&1 &
 
-    ./bin/ims -log_dir=./log/ims cfg/ims.cfg >./log/ims/ims.log 2>&1 &
-    ./bin/imr -log_dir=./log/imr cfg/imr.cfg >./log/imr/imr.log 2>&1 &
-    ./bin/im -log_dir=./log/im cfg/im.cfg >./log/im/im.log 2>&1 &
+    ./bin/ims -log_dir=./runtime/log/ims cfg/ims.cfg >./runtime/log/ims/ims.log 2>&1 &
+    ./bin/imr -log_dir=./runtime/log/imr cfg/imr.cfg >./runtime/log/imr/imr.log 2>&1 &
+    ./bin/im -log_dir=./runtime/log/im cfg/im.cfg >./log/runtime/im/im.log 2>&1 &
 
 ## token的格式
 
