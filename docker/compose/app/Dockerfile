@@ -18,4 +18,4 @@ RUN chmod +x /supervisor.sh
 
 WORKDIR /app
 
-ENTRYPOINT ["/entrypoint.sh"]
+# ENTRYPOINT ["/entrypoint.sh"]

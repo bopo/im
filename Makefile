@@ -29,7 +29,7 @@ clean-build:
 	find . -name '*.sql' -exec rm -f {} +
 
 clean-others:
-	rm -fr runtime/**/**
+	rm -fr var/**/**
 	rm -rf celerybeat-schedule
 	rm -rf dump.rdb
 	find . -name 'Thumbs.db' -exec rm -f {} +
@@ -52,20 +52,20 @@ clean-test:
 
 distclean: clean clean-build clean-others clean-test clean-pyc
 	rm -rf bin
-	rm -rf runtime
+	rm -rf var
 
 clean_log:
-	rm -rf runtime/log/**/*
+	rm -rf var/log/**/*
 
 test:
 	py.test -v ./tests
 
 init:
-	mkdir -p ./runtime/log/ims
-	mkdir -p ./runtime/log/imr
-	mkdir -p ./runtime/log/im
-	mkdir -p ./runtime/tmp/im
-	mkdir -p ./runtime/tmp/pending
+	mkdir -p ./var/log/ims
+	mkdir -p ./var/log/imr
+	mkdir -p ./var/log/im
+	mkdir -p ./var/tmp/im
+	mkdir -p ./var/tmp/pending
 
 stop:
 	killall im

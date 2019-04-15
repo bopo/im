@@ -66,56 +66,60 @@ type AppMessage struct {
 }
 
 
-func (amsg *AppMessage) ToData() []byte {
-	if amsg.msg == nil {
+func (messages *AppMessage) ToData() []byte {
+	if messages.msg == nil {
 		return nil
 	}
 
 	buffer := new(bytes.Buffer)
-	binary.Write(buffer, binary.BigEndian, amsg.appid)
-	binary.Write(buffer, binary.BigEndian, amsg.receiver)
-	binary.Write(buffer, binary.BigEndian, amsg.msgid)
-	binary.Write(buffer, binary.BigEndian, amsg.device_id)
-	binary.Write(buffer, binary.BigEndian, amsg.timestamp)
-	mbuffer := new(bytes.Buffer)
-	WriteMessage(mbuffer, amsg.msg)
-	msg_buf := mbuffer.Bytes()
-	var l int16 = int16(len(msg_buf))
-	binary.Write(buffer, binary.BigEndian, l)
-	buffer.Write(msg_buf)
+	_ = binary.Write(buffer, binary.BigEndian, messages.appid)
+	_ = binary.Write(buffer, binary.BigEndian, messages.receiver)
+	_ = binary.Write(buffer, binary.BigEndian, messages.msgid)
+	_ = binary.Write(buffer, binary.BigEndian, messages.device_id)
+	_ = binary.Write(buffer, binary.BigEndian, messages.timestamp)
+	mBuffer := new(bytes.Buffer)
+	WriteMessage(mBuffer, messages.msg)
+	msgBuf := mBuffer.Bytes()
+	var l = int16(len(msgBuf))
+	_ = binary.Write(buffer, binary.BigEndian, l)
+	buffer.Write(msgBuf)
 
 	buf := buffer.Bytes()
 	return buf
 }
 
-func (amsg *AppMessage) FromData(buff []byte) bool {
+func (messages *AppMessage) FromData(buff []byte) bool {
 	if len(buff) < 42 {
 		return false
 	}
 
 	buffer := bytes.NewBuffer(buff)
-	binary.Read(buffer, binary.BigEndian, &amsg.appid)
-	binary.Read(buffer, binary.BigEndian, &amsg.receiver)
-	binary.Read(buffer, binary.BigEndian, &amsg.msgid)
-	binary.Read(buffer, binary.BigEndian, &amsg.device_id)
-	binary.Read(buffer, binary.BigEndian, &amsg.timestamp)	
+	_ = binary.Read(buffer, binary.BigEndian, &messages.appid)
+	_ = binary.Read(buffer, binary.BigEndian, &messages.receiver)
+	_ = binary.Read(buffer, binary.BigEndian, &messages.msgid)
+	_ = binary.Read(buffer, binary.BigEndian, &messages.device_id)
+	_ = binary.Read(buffer, binary.BigEndian, &messages.timestamp)
 
 	var l int16
-	binary.Read(buffer, binary.BigEndian, &l)
+	_ = binary.Read(buffer, binary.BigEndian, &l)
+
 	if int(l) > buffer.Len() || l < 0 {
 		return false
 	}
 
-	msg_buf := make([]byte, l)
-	buffer.Read(msg_buf)
+	msgBuf := make([]byte, l)
+	_, _ = buffer.Read(msgBuf)
 
-	mbuffer := bytes.NewBuffer(msg_buf)
+	mBuffer := bytes.NewBuffer(msgBuf)
+
 	//recusive
-	msg := ReceiveMessage(mbuffer)
+	msg := ReceiveMessage(mBuffer)
+
 	if msg == nil {
 		return false
 	}
-	amsg.msg = msg
+
+	messages.msg = msg
 
 	return true
 }
@@ -131,9 +135,9 @@ type SubscribeMessage struct {
 
 func (sub *SubscribeMessage) ToData() []byte {
 	buffer := new(bytes.Buffer)
-	binary.Write(buffer, binary.BigEndian, sub.appid)
-	binary.Write(buffer, binary.BigEndian, sub.uid)
-	binary.Write(buffer, binary.BigEndian, sub.online)	
+	_ = binary.Write(buffer, binary.BigEndian, sub.appid)
+	_ = binary.Write(buffer, binary.BigEndian, sub.uid)
+	_ = binary.Write(buffer, binary.BigEndian, sub.online)
 	buf := buffer.Bytes()
 	return buf
 }
@@ -143,10 +147,10 @@ func (sub *SubscribeMessage) FromData(buff []byte) bool {
 		return false
 	}
 
-	buffer := bytes.NewBuffer(buff)	
-	binary.Read(buffer, binary.BigEndian, &sub.appid)
-	binary.Read(buffer, binary.BigEndian, &sub.uid)
-	binary.Read(buffer, binary.BigEndian, &sub.online)
+	buffer := bytes.NewBuffer(buff)
+	_ = binary.Read(buffer, binary.BigEndian, &sub.appid)
+	_ = binary.Read(buffer, binary.BigEndian, &sub.uid)
+	_ = binary.Read(buffer, binary.BigEndian, &sub.online)
 	
 	return true
 }

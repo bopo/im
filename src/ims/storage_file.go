@@ -29,7 +29,7 @@ import "strings"
 import "strconv"
 import "io"
 import log "github.com/golang/glog"
-import "github.com/GoBelieveIO/im_service/lru"
+import "github.com/bopo/im/src/lru"
 
 const HEADER_SIZE = 32
 const MAGIC = 0x494d494d

@@ -48,18 +48,18 @@ var external_messages [256]bool;
 
 
 func WriteHeader(len int32, seq int32, cmd byte, version byte, flag byte, buffer io.Writer) {
-	binary.Write(buffer, binary.BigEndian, len)
-	binary.Write(buffer, binary.BigEndian, seq)
+	_ = binary.Write(buffer, binary.BigEndian, len)
+	_ = binary.Write(buffer, binary.BigEndian, seq)
 	t := []byte{cmd, byte(version), flag, 0}
-	buffer.Write(t)
+	_, _ = buffer.Write(t)
 }
 
 func ReadHeader(buff []byte) (int, int, int, int, int) {
 	var length int32
 	var seq int32
 	buffer := bytes.NewBuffer(buff)
-	binary.Read(buffer, binary.BigEndian, &length)
-	binary.Read(buffer, binary.BigEndian, &seq)
+	_ = binary.Read(buffer, binary.BigEndian, &length)
+	_ = binary.Read(buffer, binary.BigEndian, &seq)
 	cmd, _ := buffer.ReadByte()
 	version, _ := buffer.ReadByte()
 	flag, _ := buffer.ReadByte()

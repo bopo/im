@@ -153,13 +153,13 @@ func NewRedisPool(server, password string, db int) *redis.Pool {
 			}
 			if len(password) > 0 {
 				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
+					_ = c.Close()
 					return nil, err
 				}
 			}
 			if db > 0 && db < 16 {
 				if _, err := c.Do("SELECT", db); err != nil {
-					c.Close()
+					_ = c.Close()
 					return nil, err
 				}
 			}

@@ -178,7 +178,7 @@ func DeleteGroup(db *sql.DB, group_id int64) bool {
 		goto ROLLBACK
 	}
 
-	tx.Commit()
+	_ = tx.Commit()
 	return true
 
 ROLLBACK:
@@ -201,7 +201,7 @@ func LoadAllGroup(db *sql.DB) (map[int64]*Group, error) {
 		var id int64
 		var appid int64
 		var super int8
-		rows.Scan(&id, &appid, &super)
+		_ = rows.Scan(&id, &appid, &super)
 		members, err := LoadGroupMember(db, id)
 		if err != nil {
 			log.Info("error:", err)
@@ -233,7 +233,7 @@ func LoadGroupMember(db *sql.DB, group_id int64) (map[int64]int64, error) {
 		var uid int64
 		var timestamp int64
 		var mute int64
-		rows.Scan(&uid, &timestamp, &mute)
+		_ = rows.Scan(&uid, &timestamp, &mute)
 		members[uid] = timestamp|(mute<<31)
 	}
 	return members, nil
