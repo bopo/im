@@ -43,6 +43,7 @@ def connect_server(uid, port):
     send_message(MSG_AUTH_TOKEN, seq, auth, sock)
     
     cmd, _, msg = recv_message(sock)
+    print cmd, msg, seq
     
     if cmd != MSG_AUTH_STATUS or msg != 0:
         return None, 0
@@ -67,13 +68,17 @@ def recv_client_(uid, port, handler, group_id):
     sync_key = 0
 
     seq += 1
+
     send_message(MSG_SYNC, seq, sync_key, sock)
+    
     if group_id:
         group_sync_keys[group_id] = 0
         seq += 1
         send_message(MSG_SYNC_GROUP, seq, (group_id, sync_key), sock)
+    
     quit = False
     begin = False
+    
     while True:
         cmd, s, msg = recv_message(sock)
         print "cmd:", cmd, "msg:", msg
@@ -192,13 +197,13 @@ def TestSendAndRecv():
     global task
     task = 0
  
-    t3 = threading.Thread(target=recv_message_client, args=(13800000000,))
+    t3 = threading.Thread(target=recv_message_client, args=(13800000002,))
     t3.setDaemon(True)
     t3.start()
     
     time.sleep(1)
     
-    t2 = threading.Thread(target=send_client, args=(13800000001, 13800000000, MSG_IM))
+    t2 = threading.Thread(target=send_client, args=(13800000003, 13800000002, MSG_IM))
     t2.setDaemon(True)
     t2.start()
     
@@ -215,19 +220,18 @@ def TestGroupMessage():
     is_super = False
     task = 0
 
-    t3 = threading.Thread(target=recv_group_message_client, args=(13800000001,))
+    t3 = threading.Thread(target=recv_group_message_client, args=(13800000003,))
     t3.setDaemon(True)
     t3.start()
 
     time.sleep(1)
 
     # 创建组
-    group_id = create_group(13800000000, "test", is_super, [13800000000,13800000001])
-    
+    group_id = create_group(13800000002, "test", is_super, [13800000002,13800000003])
     print "group id:", group_id
     time.sleep(1)
 
-    t2 = threading.Thread(target=send_client, args=(13800000000, group_id, MSG_GROUP_IM))
+    t2 = threading.Thread(target=send_client, args=(13800000002, group_id, MSG_GROUP_IM))
     t2.setDaemon(True)
     t2.start()
 
@@ -241,7 +245,7 @@ def TestGroupMessage():
     
 def main():
     TestSendAndRecv()
-    # TestGroupMessage()
+    TestGroupMessage()
    
 
 
