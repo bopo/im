@@ -120,7 +120,7 @@ def recv_client_(uid, port, handler, group_id):
 
 
     sock.close()
-    task += 1
+    task = task + 1
     
 def recv_group_client(uid, group_id, port, handler):
     recv_client_(uid, port, handler, group_id)
@@ -203,6 +203,7 @@ def TestSendAndRecv():
     t2.start()
     
     while task < 2:
+        print(task)
         time.sleep(1)
 
     print "test peer message completed"
@@ -231,6 +232,7 @@ def TestGroupMessage():
     t2.start()
 
     while task < 2:
+        print(task)
         time.sleep(1)
 
     delete_group(group_id)
@@ -239,7 +241,7 @@ def TestGroupMessage():
     
 def main():
     TestSendAndRecv()
-    TestGroupMessage()
+    # TestGroupMessage()
    
 
 

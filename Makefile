@@ -15,8 +15,9 @@ install:all
 	cp ./config/*.cfg bin
 
 clean:
-	rm -f ./src/im/im  ./src/im/benchmark ./src/im/benchmark_group ./src/im/benchmark_connection ./src/im/benchmark_sender ./src/im/benchmark_storage ./src/im/benchmark_route ./src/ims/main.test ./src/ims/ims ./src/imr/imr
-	rm -f ./src/ims/ims_trunncate ./src/ims/main.test
+	rm -f ./src/im/im ./src/im/benchmark ./src/im/benchmark_group ./src/im/benchmark_connection ./src/im/benchmark_sender ./src/im/benchmark_storage ./src/im/benchmark_route ./src/ims/main.test ./src/ims/ims ./src/imr/imr
+	rm -f ./src/ims/ims_truncate ./src/ims/main.test
+
 clean-build:
 	rm -fr build/
 	rm -fr dist/
