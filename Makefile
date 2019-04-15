@@ -1,7 +1,7 @@
 all:
-	cd src/im && make
-	cd src/ims && make
-	cd src/imr && make
+	cd src/im && CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
+	cd src/ims && CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
+	cd src/imr && CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
 
 dep:
 	dep ensure -v
@@ -11,6 +11,8 @@ install:all
 	cp ./src/im/im ./bin
 	cp ./src/ims/ims ./bin
 	cp ./src/imr/imr ./bin
+	cp ./start.sh bin
+	cp ./config/*.cfg bin
 
 clean:
 	rm -f ./src/im/im  ./src/im/benchmark ./src/im/benchmark_group ./src/im/benchmark_connection ./src/im/benchmark_sender ./src/im/benchmark_storage ./src/im/benchmark_route ./src/ims/main.test ./src/ims/ims ./src/imr/imr
