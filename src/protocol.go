@@ -48,18 +48,18 @@ var external_messages [256]bool;
 
 
 func WriteHeader(len int32, seq int32, cmd byte, version byte, flag byte, buffer io.Writer) {
-	_ = binary.Write(buffer, binary.BigEndian, len)
-	_ = binary.Write(buffer, binary.BigEndian, seq)
+	binary.Write(buffer, binary.BigEndian, len)
+	binary.Write(buffer, binary.BigEndian, seq)
 	t := []byte{cmd, byte(version), flag, 0}
-	_, _ = buffer.Write(t)
+	buffer.Write(t)
 }
 
 func ReadHeader(buff []byte) (int, int, int, int, int) {
 	var length int32
 	var seq int32
 	buffer := bytes.NewBuffer(buff)
-	_ = binary.Read(buffer, binary.BigEndian, &length)
-	_ = binary.Read(buffer, binary.BigEndian, &seq)
+	binary.Read(buffer, binary.BigEndian, &length)
+	binary.Read(buffer, binary.BigEndian, &seq)
 	cmd, _ := buffer.ReadByte()
 	version, _ := buffer.ReadByte()
 	flag, _ := buffer.ReadByte()
@@ -91,7 +91,6 @@ func SendMessage(conn io.Writer, msg *Message) error {
 func ReceiveLimitMessage(conn io.Reader, limit_size int, external bool) *Message {
 	buff := make([]byte, 12)
 	_, err := io.ReadFull(conn, buff)
-	
 	if err != nil {
 		log.Info("sock read error:", err)
 		return nil
