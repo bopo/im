@@ -35,19 +35,20 @@ const HEADER_SIZE = 32
 const MAGIC = 0x494d494d
 const F_VERSION = 1 << 16 //1.0
 
-const BLOCK_SIZE = 128 * 1024 * 1024
+const BLOCK_SIZE = 128*1024*1024
 const LRU_SIZE = 128
 
 type StorageFile struct {
-	root     string
-	mutex    sync.Mutex
-	dirty    bool       //write file dirty
-	block_NO int        //write file block NO
-	file     *os.File   //write
-	files    *lru.Cache //read, block files
+	root      string
+	mutex     sync.Mutex
 
-	last_id       int64 //peer&group message_index记录的最大消息id
-	last_saved_id int64 //索引文件中最大的消息id
+	dirty     bool     //write file dirty
+	block_NO  int      //write file block NO
+	file      *os.File //write
+	files     *lru.Cache//read, block files
+
+	last_id        int64   //peer&group message_index记录的最大消息id
+	last_saved_id  int64   //索引文件中最大的消息id	
 }
 
 func onFileEvicted(key lru.Key, value interface{}) {
@@ -86,7 +87,7 @@ func NewStorageFile(root string) *StorageFile {
 	}
 
 	storage.openWriteFile(block_NO)
-
+	
 	return storage
 }
 
@@ -109,8 +110,8 @@ func checkFile(file_path string) bool {
 	if file_size < HEADER_SIZE {
 		return false
 	}
-
-	_, err = file.Seek(file_size-4, os.SEEK_SET)
+	
+	_, err = file.Seek(file_size - 4, os.SEEK_SET)
 	if err != nil {
 		log.Fatal("seek file")
 	}
@@ -122,9 +123,10 @@ func checkFile(file_path string) bool {
 	}
 	buffer := bytes.NewBuffer(mf)
 	var m int32
-	_ = binary.Read(buffer, binary.BigEndian, &m)
+	binary.Read(buffer, binary.BigEndian, &m)
 	return int(m) == MAGIC
 }
+
 
 //open write file
 func (storage *StorageFile) openWriteFile(block_NO int) {
@@ -184,11 +186,11 @@ func (storage *StorageFile) getMsgId(block_NO int, offset int) int64 {
 }
 
 func (storage *StorageFile) getBlockNO(msg_id int64) int {
-	return int(msg_id / BLOCK_SIZE)
+	return int(msg_id/BLOCK_SIZE)
 }
 
 func (storage *StorageFile) getBlockOffset(msg_id int64) int {
-	return int(msg_id % BLOCK_SIZE)
+	return int(msg_id%BLOCK_SIZE)
 }
 
 func (storage *StorageFile) getFile(block_NO int) *os.File {
@@ -205,10 +207,14 @@ func (storage *StorageFile) getFile(block_NO int) *os.File {
 	return file
 }
 
+
+
+
 func (storage *StorageFile) ReadMessage(file *os.File) *Message {
 	//校验消息起始位置的magic
 	var magic int32
 	err := binary.Read(file, binary.BigEndian, &magic)
+
 	if err != nil {
 		log.Info("read file err:", err)
 		return nil
@@ -218,21 +224,25 @@ func (storage *StorageFile) ReadMessage(file *os.File) *Message {
 		log.Warning("magic err:", magic)
 		return nil
 	}
+
 	msg := ReceiveMessage(file)
+
 	if msg == nil {
 		return msg
 	}
-
+	
 	err = binary.Read(file, binary.BigEndian, &magic)
+
 	if err != nil {
 		log.Info("read file err:", err)
 		return nil
 	}
-
+	
 	if magic != MAGIC {
 		log.Warning("magic err:", magic)
 		return nil
 	}
+
 	return msg
 }
 
@@ -264,8 +274,8 @@ func (storage *StorageFile) ReadHeader(file *os.File) (magic int, version int) {
 	}
 	buffer := bytes.NewBuffer(header)
 	var m, v int32
-	_ = binary.Read(buffer, binary.BigEndian, &m)
-	_ = binary.Read(buffer, binary.BigEndian, &v)
+	binary.Read(buffer, binary.BigEndian, &m)
+	binary.Read(buffer, binary.BigEndian, &v)
 	magic = int(m)
 	version = int(v)
 	return
@@ -291,9 +301,9 @@ func (storage *StorageFile) WriteHeader(file *os.File) {
 
 func (storage *StorageFile) WriteMessage(file io.Writer, msg *Message) {
 	buffer := new(bytes.Buffer)
-	_ = binary.Write(buffer, binary.BigEndian, int32(MAGIC))
+	binary.Write(buffer, binary.BigEndian, int32(MAGIC))
 	WriteMessage(buffer, msg)
-	_ = binary.Write(buffer, binary.BigEndian, int32(MAGIC))
+	binary.Write(buffer, binary.BigEndian, int32(MAGIC))
 	buf := buffer.Bytes()
 	n, err := file.Write(buf)
 	if err != nil {
@@ -312,12 +322,12 @@ func (storage *StorageFile) saveMessage(msg *Message) int64 {
 	}
 
 	buffer := new(bytes.Buffer)
-	_ = binary.Write(buffer, binary.BigEndian, int32(MAGIC))
+	binary.Write(buffer, binary.BigEndian, int32(MAGIC))
 	WriteMessage(buffer, msg)
-	_ = binary.Write(buffer, binary.BigEndian, int32(MAGIC))
+	binary.Write(buffer, binary.BigEndian, int32(MAGIC))
 	buf := buffer.Bytes()
 
-	if msgid+int64(len(buf)) > BLOCK_SIZE {
+	if msgid + int64(len(buf)) > BLOCK_SIZE {
 		err = storage.file.Sync()
 		if err != nil {
 			log.Fatalln("sync storage file:", err)
@@ -330,7 +340,7 @@ func (storage *StorageFile) saveMessage(msg *Message) int64 {
 		}
 	}
 
-	if msgid+int64(len(buf)) > BLOCK_SIZE {
+	if msgid + int64(len(buf)) > BLOCK_SIZE {
 		log.Fatalln("message size:", len(buf))
 	}
 	n, err := storage.file.Write(buf)
@@ -343,10 +353,10 @@ func (storage *StorageFile) saveMessage(msg *Message) int64 {
 	storage.dirty = true
 
 	msgid = int64(storage.block_NO)*BLOCK_SIZE + msgid
-	master.ewt <- &EMessage{msgid: msgid, msg: msg}
+	master.ewt <- &EMessage{msgid:msgid, msg:msg}
 	log.Info("save message:", Command(msg.cmd), " ", msgid)
 	return msgid
-
+	
 }
 
 func (storage *StorageFile) SaveMessage(msg *Message) int64 {

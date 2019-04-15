@@ -1,3 +1,4 @@
+
 /**
  * Copyright (c) 2014-2015, GoBelieve     
  * All rights reserved.
@@ -27,33 +28,34 @@ import "bytes"
 import "encoding/binary"
 import log "github.com/golang/glog"
 
+
 const BATCH_SIZE = 1000
 const PEER_INDEX_FILE_NAME = "peer_index.v2"
 
 type UserID struct {
-	appid int64
-	uid   int64
+	appid  int64
+	uid    int64
 }
 
 type UserIndex struct {
-	last_id       int64
-	last_peer_id  int64
+	last_id int64	
+	last_peer_id int64
 	last_batch_id int64
-	last_seq_id   int64
+	last_seq_id int64
 }
 
 //在取离线消息时，可以对群组消息和点对点消息分别获取，
 //这样可以做到分别控制点对点消息和群组消息读取量，避免单次读取超量的离线消息
 type PeerStorage struct {
 	*StorageFile
-
+	
 	//消息索引全部放在内存中,在程序退出时,再全部保存到文件中，
 	//如果索引文件不存在或上次保存失败，则在程序启动的时候，从消息DB中重建索引，这需要遍历每一条消息
-	message_index map[UserID]*UserIndex //记录每个用户最近的消息ID
+	message_index  map[UserID]*UserIndex //记录每个用户最近的消息ID
 }
 
 func NewPeerStorage(f *StorageFile) *PeerStorage {
-	storage := &PeerStorage{StorageFile: f}
+	storage := &PeerStorage{StorageFile:f}
 	storage.message_index = make(map[UserID]*UserIndex);
 	return storage
 }
@@ -68,14 +70,14 @@ func (storage *PeerStorage) SavePeerMessage(appid int64, uid int64, device_id in
 	last_peer_id := user_index.last_peer_id
 	last_batch_id := user_index.last_batch_id
 	last_seq_id := user_index.last_seq_id
-
-	off := &OfflineMessage3{appid: appid, receiver: uid, msgid: msgid, device_id: device_id, prev_msgid: last_id, prev_peer_msgid: last_peer_id, prev_batch_msgid: last_batch_id}
-
+	
+	off := &OfflineMessage3{appid:appid, receiver:uid, msgid:msgid, device_id:device_id, prev_msgid:last_id, prev_peer_msgid:last_peer_id, prev_batch_msgid:last_batch_id}
+	
 	var flag int
 	if storage.isGroupMessage(msg) {
 		flag = MESSAGE_FLAG_GROUP
 	}
-	m := &Message{cmd: MSG_OFFLINE_V3, flag: flag, body: off}
+	m := &Message{cmd:MSG_OFFLINE_V3, flag:flag, body:off}
 	last_id = storage.saveMessage(m)
 
 	if !storage.isGroupMessage(msg) {
@@ -86,8 +88,8 @@ func (storage *PeerStorage) SavePeerMessage(appid int64, uid int64, device_id in
 	if last_seq_id%BATCH_SIZE == 0 {
 		last_batch_id = last_id
 	}
-
-	ui := &UserIndex{last_id, last_peer_id, last_batch_id, last_seq_id}
+	
+	ui := &UserIndex{last_id, last_peer_id, last_batch_id, last_seq_id}	
 	storage.setPeerIndex(appid, uid, ui)
 	return msgid
 }
@@ -110,11 +112,11 @@ func (storage *PeerStorage) getPeerIndex(appid int64, receiver int64) *UserIndex
 func (storage *PeerStorage) setPeerIndex(appid int64, receiver int64, ui *UserIndex) {
 	id := UserID{appid, receiver}
 	storage.message_index[id] = ui
-
+	
 	if ui.last_id > storage.last_id {
 		storage.last_id = ui.last_id
 	}
-
+	
 }
 
 //获取最近离线消息ID
@@ -133,11 +135,12 @@ func (storage *PeerStorage) GetLastMessageID(appid int64, receiver int64) (int64
 	return storage.getLastMessageID(appid, receiver)
 }
 
+
 //获取所有消息id大于sync_msgid的消息,
 //group_limit&limit:0 表示无限制
 //消息超过group_limit后，只获取点对点消息
 //总消息数限制在limit
-func (storage *PeerStorage) LoadHistoryMessages(appid int64, receiver int64, sync_msgid int64, group_limit int, limit int) ([]*EMessage, int64, bool) {
+func (storage *PeerStorage) LoadHistoryMessages(appid int64, receiver int64, sync_msgid int64,  group_limit int, limit int) ([]*EMessage, int64, bool) {
 	var last_msgid int64
 	last_id, _ := storage.GetLastMessageID(appid, receiver)
 	messages := make([]*EMessage, 0, 10)
@@ -150,29 +153,29 @@ func (storage *PeerStorage) LoadHistoryMessages(appid int64, receiver int64, syn
 		if msg == nil {
 			break
 		}
-
+		
 		var off *OfflineMessage2
 		if msg.cmd == MSG_OFFLINE {
 			off1 := msg.body.(*OfflineMessage)
 			off = &OfflineMessage2{
-				appid:           off1.appid,
-				receiver:        off1.receiver,
-				msgid:           off1.msgid,
-				device_id:       off1.device_id,
-				prev_msgid:      off1.prev_msgid,
-				prev_peer_msgid: off1.prev_msgid,
+				appid:off1.appid,
+				receiver:off1.receiver,
+				msgid:off1.msgid,
+				device_id:off1.device_id,
+				prev_msgid:off1.prev_msgid,
+				prev_peer_msgid:off1.prev_msgid,
 			}
 		} else if msg.cmd == MSG_OFFLINE_V2 {
 			off = msg.body.(*OfflineMessage2)
 		} else if msg.cmd == MSG_OFFLINE_V3 {
 			off3 := msg.body.(*OfflineMessage3)
 			off = &OfflineMessage2{
-				appid:           off3.appid,
-				receiver:        off3.receiver,
-				msgid:           off3.msgid,
-				device_id:       off3.device_id,
-				prev_msgid:      off3.prev_msgid,
-				prev_peer_msgid: off3.prev_peer_msgid,
+				appid:off3.appid,
+				receiver:off3.receiver,
+				msgid:off3.msgid,
+				device_id:off3.device_id,
+				prev_msgid:off3.prev_msgid,
+				prev_peer_msgid:off3.prev_peer_msgid,
 			}
 		} else {
 			log.Warning("invalid message cmd:", msg.cmd)
@@ -183,29 +186,29 @@ func (storage *PeerStorage) LoadHistoryMessages(appid int64, receiver int64, syn
 		}
 		if off.msgid <= sync_msgid {
 			break
-		}
-
+		}		
+		
 		msg = storage.LoadMessage(off.msgid)
 		if msg == nil {
 			break
 		}
-		if msg.cmd != MSG_GROUP_IM &&
+		if msg.cmd != MSG_GROUP_IM && 
 			msg.cmd != MSG_GROUP_NOTIFICATION &&
-			msg.cmd != MSG_IM &&
-			msg.cmd != MSG_CUSTOMER &&
+			msg.cmd != MSG_IM && 
+			msg.cmd != MSG_CUSTOMER && 
 			msg.cmd != MSG_CUSTOMER_SUPPORT &&
 			msg.cmd != MSG_SYSTEM {
 			if group_limit > 0 && len(messages) >= group_limit {
 				last_id = off.prev_peer_msgid
 			} else {
 				last_id = off.prev_msgid
-			}
+			}			
 			continue
 		}
 
-		emsg := &EMessage{msgid: off.msgid, device_id: off.device_id, msg: msg}
+		emsg := &EMessage{msgid:off.msgid, device_id:off.device_id, msg:msg}
 		messages = append(messages, emsg)
-
+		
 		if limit > 0 && len(messages) >= limit {
 			break
 		}
@@ -223,7 +226,7 @@ func (storage *PeerStorage) LoadHistoryMessages(appid int64, receiver int64, syn
 	}
 	log.Infof("appid:%d uid:%d sync msgid:%d history message loaded:%d %d",
 		appid, receiver, sync_msgid, len(messages), last_msgid)
-
+	
 	return messages, last_msgid, false
 }
 
@@ -234,7 +237,7 @@ func (storage *PeerStorage) LoadHistoryMessages(appid int64, receiver int64, syn
 func (storage *PeerStorage) LoadHistoryMessagesV3(appid int64, receiver int64, sync_msgid int64, limit int, hard_limit int) ([]*EMessage, int64, bool) {
 	var last_msgid int64
 	var last_offline_msgid int64
-
+	
 	msg_index := storage.GetPeerIndex(appid, receiver)
 
 	var last_batch_id int64
@@ -242,14 +245,14 @@ func (storage *PeerStorage) LoadHistoryMessagesV3(appid int64, receiver int64, s
 		last_batch_id = msg_index.last_batch_id
 	}
 
-	hard_batch_count := hard_limit / BATCH_SIZE
-
-	batch_count := limit / BATCH_SIZE
+	hard_batch_count := hard_limit/BATCH_SIZE
+	
+	batch_count := limit/BATCH_SIZE
 	if batch_count == 0 {
 		//as if default limit==BATCH_SIZE
 		batch_count = 1
 	}
-
+	
 	batch_ids := make([]int64, 0, 10)
 
 	//搜索和sync_msgid最近的batch_id
@@ -265,12 +268,12 @@ func (storage *PeerStorage) LoadHistoryMessagesV3(appid int64, receiver int64, s
 		if msg.cmd != MSG_OFFLINE_V3 {
 			break
 		}
-		off3 := msg.body.(*OfflineMessage3)
+		off3 := msg.body.(*OfflineMessage3)		
 		if off3.msgid <= sync_msgid {
 			break
 		}
-
-		batch_ids = append(batch_ids, last_batch_id)
+		
+		batch_ids = append(batch_ids, last_batch_id)		
 		last_batch_id = off3.prev_batch_msgid
 
 		if hard_batch_count > 0 && len(batch_ids) >= hard_batch_count {
@@ -293,41 +296,41 @@ func (storage *PeerStorage) LoadHistoryMessagesV3(appid int64, receiver int64, s
 	} else if msg_index != nil {
 		last_id = msg_index.last_id
 	}
-
+	
 	messages := make([]*EMessage, 0, 10)
 	for {
 		if last_id <= sync_msgid {
 			break
 		}
-
+		
 		msg := storage.LoadMessage(last_id)
 		if msg == nil {
 			break
 		}
-
+		
 		var off *OfflineMessage2
 		if msg.cmd == MSG_OFFLINE {
 			off1 := msg.body.(*OfflineMessage)
 			off = &OfflineMessage2{
-				appid:           off1.appid,
-				receiver:        off1.receiver,
-				msgid:           off1.msgid,
-				device_id:       off1.device_id,
-				prev_msgid:      off1.prev_msgid,
-				prev_peer_msgid: off1.prev_msgid,
+				appid:off1.appid,
+				receiver:off1.receiver,
+				msgid:off1.msgid,
+				device_id:off1.device_id,
+				prev_msgid:off1.prev_msgid,
+				prev_peer_msgid:off1.prev_msgid,
 			}
 		} else if msg.cmd == MSG_OFFLINE_V2 {
 			off = msg.body.(*OfflineMessage2)
 		} else if msg.cmd == MSG_OFFLINE_V3 {
 			off3 := msg.body.(*OfflineMessage3)
 			off = &OfflineMessage2{
-				appid:           off3.appid,
-				receiver:        off3.receiver,
-				msgid:           off3.msgid,
-				device_id:       off3.device_id,
-				prev_msgid:      off3.prev_msgid,
-				prev_peer_msgid: off3.prev_msgid,
-			}
+				appid:off3.appid,
+				receiver:off3.receiver,
+				msgid:off3.msgid,
+				device_id:off3.device_id,
+				prev_msgid:off3.prev_msgid,
+				prev_peer_msgid:off3.prev_msgid,
+			}			
 		} else {
 			log.Warning("invalid message cmd:", msg.cmd)
 			break
@@ -338,16 +341,16 @@ func (storage *PeerStorage) LoadHistoryMessagesV3(appid int64, receiver int64, s
 		}
 		if off.msgid <= sync_msgid {
 			break
-		}
-
+		}		
+		
 		msg = storage.LoadMessage(off.msgid)
 		if msg == nil {
 			break
 		}
-		if msg.cmd != MSG_GROUP_IM &&
+		if msg.cmd != MSG_GROUP_IM && 
 			msg.cmd != MSG_GROUP_NOTIFICATION &&
-			msg.cmd != MSG_IM &&
-			msg.cmd != MSG_CUSTOMER &&
+			msg.cmd != MSG_IM && 
+			msg.cmd != MSG_CUSTOMER && 
 			msg.cmd != MSG_CUSTOMER_SUPPORT &&
 			msg.cmd != MSG_SYSTEM {
 			if is_peer {
@@ -358,9 +361,9 @@ func (storage *PeerStorage) LoadHistoryMessagesV3(appid int64, receiver int64, s
 			continue
 		}
 
-		emsg := &EMessage{msgid: off.msgid, device_id: off.device_id, msg: msg}
+		emsg := &EMessage{msgid:off.msgid, device_id:off.device_id, msg:msg}
 		messages = append(messages, emsg)
-
+		
 		if limit > 0 && len(messages) >= limit {
 			break
 		}
@@ -387,9 +390,10 @@ func (storage *PeerStorage) LoadHistoryMessagesV3(appid int64, receiver int64, s
 		appid, receiver, sync_msgid, len(messages), last_msgid,
 		last_offline_msgid, msg_index.last_id, msg_index.last_batch_id,
 		msg_index.last_seq_id, hasMore, is_peer)
-
+	
 	return messages, last_msgid, hasMore
 }
+
 
 func (storage *PeerStorage) LoadLatestMessages(appid int64, receiver int64, limit int) []*EMessage {
 	last_id, _ := storage.GetLastMessageID(appid, receiver)
@@ -425,21 +429,21 @@ func (storage *PeerStorage) LoadLatestMessages(appid int64, receiver int64, limi
 			log.Warning("invalid message cmd:", msg.cmd)
 			break
 		}
-
+		
 		msg = storage.LoadMessage(msgid)
 		if msg == nil {
 			break
 		}
-		if msg.cmd != MSG_GROUP_IM &&
+		if msg.cmd != MSG_GROUP_IM && 
 			msg.cmd != MSG_GROUP_NOTIFICATION &&
-			msg.cmd != MSG_IM &&
-			msg.cmd != MSG_CUSTOMER &&
+			msg.cmd != MSG_IM && 
+			msg.cmd != MSG_CUSTOMER && 
 			msg.cmd != MSG_CUSTOMER_SUPPORT {
 			last_id = prev_msgid
 			continue
 		}
 
-		emsg := &EMessage{msgid: msgid, device_id: device_id, msg: msg}
+		emsg := &EMessage{msgid:msgid, device_id:device_id, msg:msg}
 		messages = append(messages, emsg)
 		if len(messages) >= limit {
 			break
@@ -450,7 +454,7 @@ func (storage *PeerStorage) LoadLatestMessages(appid int64, receiver int64, limi
 }
 
 func (client *PeerStorage) isGroupMessage(msg *Message) bool {
-	return msg.cmd == MSG_GROUP_IM || msg.flag&MESSAGE_FLAG_GROUP != 0
+	return msg.cmd == MSG_GROUP_IM || msg.flag & MESSAGE_FLAG_GROUP != 0
 }
 
 func (client *PeerStorage) isSender(msg *Message, appid int64, uid int64) bool {
@@ -463,7 +467,7 @@ func (client *PeerStorage) isSender(msg *Message, appid int64, uid int64) bool {
 
 	if msg.cmd == MSG_CUSTOMER {
 		m := msg.body.(*CustomerMessage)
-		if m.customer_appid == appid &&
+		if m.customer_appid == appid && 
 			m.customer_id == uid {
 			return true
 		}
@@ -471,13 +475,14 @@ func (client *PeerStorage) isSender(msg *Message, appid int64, uid int64) bool {
 
 	if msg.cmd == MSG_CUSTOMER_SUPPORT {
 		m := msg.body.(*CustomerMessage)
-		if config.kefu_appid == appid &&
+		if config.kefu_appid == appid && 
 			m.seller_id == uid {
 			return true
 		}
 	}
 	return false
 }
+
 
 func (storage *PeerStorage) GetNewCount(appid int64, uid int64, last_received_id int64) int {
 	last_id, _ := storage.GetLastMessageID(appid, uid)
@@ -545,11 +550,11 @@ func (storage *PeerStorage) createPeerIndex() {
 			}
 
 			block_NO := i
-			msgid = int64(block_NO)*BLOCK_SIZE + msgid
+			msgid = int64(block_NO)*BLOCK_SIZE + msgid			
 			if msg.cmd == MSG_OFFLINE {
 				off := msg.body.(*OfflineMessage)
 				ui := &UserIndex{msgid, msgid, 0, 0}
-				storage.setPeerIndex(off.appid, off.receiver, ui)
+				storage.setPeerIndex(off.appid, off.receiver, ui)				
 			} else if msg.cmd == MSG_OFFLINE_V2 {
 				off := msg.body.(*OfflineMessage2)
 				last_peer_id := msgid
@@ -557,7 +562,7 @@ func (storage *PeerStorage) createPeerIndex() {
 					_, last_peer_id = storage.getLastMessageID(off.appid, off.receiver)
 				}
 				ui := &UserIndex{msgid, last_peer_id, 0, 0}
-				storage.setPeerIndex(off.appid, off.receiver, ui)
+				storage.setPeerIndex(off.appid, off.receiver, ui)				
 			} else if msg.cmd == MSG_OFFLINE_V3 {
 				off := msg.body.(*OfflineMessage3)
 				last_peer_id := msgid
@@ -571,7 +576,7 @@ func (storage *PeerStorage) createPeerIndex() {
 				if last_seq_id%BATCH_SIZE == 0 {
 					last_batch_id = msgid
 				}
-
+				
 				ui := &UserIndex{msgid, last_peer_id, last_batch_id, last_seq_id}
 				storage.setPeerIndex(off.appid, off.receiver, ui)
 			}
@@ -582,12 +587,13 @@ func (storage *PeerStorage) createPeerIndex() {
 	log.Info("create message index end:", storage.last_id, time.Now().UnixNano())
 }
 
+
 func (storage *PeerStorage) repairPeerIndex() {
 	log.Info("repair message index begin:", storage.last_id, time.Now().UnixNano())
 
 	first := storage.getBlockNO(storage.last_id)
 	off := storage.getBlockOffset(storage.last_id)
-
+	
 	for i := first; i <= storage.block_NO; i++ {
 		file := storage.openReadFile(i)
 		if file == nil {
@@ -599,7 +605,7 @@ func (storage *PeerStorage) repairPeerIndex() {
 		if i == first {
 			offset = off
 		}
-
+		
 		_, err := file.Seek(int64(offset), os.SEEK_SET)
 		if err != nil {
 			log.Warning("seek file err:", err)
@@ -616,16 +622,16 @@ func (storage *PeerStorage) repairPeerIndex() {
 			if msg == nil {
 				break
 			}
-			block_NO := i
+			block_NO := i			
 			msgid = int64(block_NO)*BLOCK_SIZE + msgid
 			if msgid == storage.last_id {
 				continue
 			}
-
+			
 			if msg.cmd == MSG_OFFLINE {
 				off := msg.body.(*OfflineMessage)
 				ui := &UserIndex{msgid, msgid, 0, 0}
-				storage.setPeerIndex(off.appid, off.receiver, ui)
+				storage.setPeerIndex(off.appid, off.receiver, ui)				
 			} else if msg.cmd == MSG_OFFLINE_V2 {
 				off := msg.body.(*OfflineMessage2)
 				last_peer_id := msgid
@@ -634,7 +640,7 @@ func (storage *PeerStorage) repairPeerIndex() {
 					_, last_peer_id = storage.getLastMessageID(off.appid, off.receiver)
 				}
 				ui := &UserIndex{msgid, last_peer_id, 0, 0}
-				storage.setPeerIndex(off.appid, off.receiver, ui)
+				storage.setPeerIndex(off.appid, off.receiver, ui)				
 			} else if msg.cmd == MSG_OFFLINE_V3 {
 				off := msg.body.(*OfflineMessage3)
 				last_peer_id := msgid
@@ -658,13 +664,14 @@ func (storage *PeerStorage) repairPeerIndex() {
 	log.Info("repair message index end:", storage.last_id, time.Now().UnixNano())
 }
 
+
 func (storage *PeerStorage) readPeerIndex() bool {
 	path := fmt.Sprintf("%s/%s", storage.root, PEER_INDEX_FILE_NAME)
 	log.Info("read message index path:", path)
 	file, err := os.Open(path)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			log.Fatal("open file:", err)
+			log.Fatal("open file:", err)			
 		}
 		return false
 	}
@@ -688,12 +695,12 @@ func (storage *PeerStorage) readPeerIndex() bool {
 			var peer_msgid int64
 			var batch_id int64
 			var seq_id int64
-			_ = binary.Read(buffer, binary.BigEndian, &id.appid)
-			_ = binary.Read(buffer, binary.BigEndian, &id.uid)
-			_ = binary.Read(buffer, binary.BigEndian, &msg_id)
-			_ = binary.Read(buffer, binary.BigEndian, &peer_msgid)
-			_ = binary.Read(buffer, binary.BigEndian, &batch_id)
-			_ = binary.Read(buffer, binary.BigEndian, &seq_id)
+			binary.Read(buffer, binary.BigEndian, &id.appid)
+			binary.Read(buffer, binary.BigEndian, &id.uid)
+			binary.Read(buffer, binary.BigEndian, &msg_id)
+			binary.Read(buffer, binary.BigEndian, &peer_msgid)
+			binary.Read(buffer, binary.BigEndian, &batch_id)
+			binary.Read(buffer, binary.BigEndian, &seq_id)
 			ui := &UserIndex{msg_id, peer_msgid, batch_id, seq_id}
 			storage.setPeerIndex(id.appid, id.uid, ui)
 		}
@@ -711,16 +718,18 @@ func (storage *PeerStorage) removePeerIndex() {
 	}
 }
 
+
 func (storage *PeerStorage) clonePeerIndex() map[UserID]*UserIndex {
 	message_index := make(map[UserID]*UserIndex)
-	for k, v := range (storage.message_index) {
+	for k, v := range(storage.message_index) {
 		message_index[k] = v
 	}
 	return message_index
 }
 
+
 //appid uid msgid = 24字节
-func (storage *PeerStorage) savePeerIndex(message_index map[UserID]*UserIndex) {
+func (storage *PeerStorage) savePeerIndex(message_index  map[UserID]*UserIndex ) {
 	path := fmt.Sprintf("%s/peer_index_t", storage.root)
 	log.Info("write peer message index path:", path)
 	begin := time.Now().UnixNano()
@@ -733,16 +742,16 @@ func (storage *PeerStorage) savePeerIndex(message_index map[UserID]*UserIndex) {
 
 	buffer := new(bytes.Buffer)
 	index := 0
-	for id, value := range (message_index) {
-		_ = binary.Write(buffer, binary.BigEndian, id.appid)
-		_ = binary.Write(buffer, binary.BigEndian, id.uid)
-		_ = binary.Write(buffer, binary.BigEndian, value.last_id)
-		_ = binary.Write(buffer, binary.BigEndian, value.last_peer_id)
-		_ = binary.Write(buffer, binary.BigEndian, value.last_batch_id)
-		_ = binary.Write(buffer, binary.BigEndian, value.last_seq_id)
+	for id, value := range(message_index) {
+		binary.Write(buffer, binary.BigEndian, id.appid)
+		binary.Write(buffer, binary.BigEndian, id.uid)
+		binary.Write(buffer, binary.BigEndian, value.last_id)
+		binary.Write(buffer, binary.BigEndian, value.last_peer_id)
+		binary.Write(buffer, binary.BigEndian, value.last_batch_id)
+		binary.Write(buffer, binary.BigEndian, value.last_seq_id)
 		index += 1
 		//batch write to file
-		if index%1000 == 0 {
+		if index % 1000 == 0 {
 			buf := buffer.Bytes()
 			n, err := file.Write(buf)
 			if err != nil {
@@ -774,10 +783,12 @@ func (storage *PeerStorage) savePeerIndex(message_index map[UserID]*UserIndex) {
 	if err != nil {
 		log.Fatal("rename peer index file err:", err)
 	}
-
+	
 	end := time.Now().UnixNano()
-	log.Info("flush peer index end:", end, " used:", end-begin)
+	log.Info("flush peer index end:", end, " used:", end - begin)
 }
+
+
 
 func (storage *PeerStorage) execMessage(msg *Message, msgid int64) {
 	if msg.cmd == MSG_OFFLINE {
@@ -786,9 +797,9 @@ func (storage *PeerStorage) execMessage(msg *Message, msgid int64) {
 		storage.setPeerIndex(off.appid, off.receiver, ui)
 	} else if msg.cmd == MSG_OFFLINE_V2 {
 		off := msg.body.(*OfflineMessage2)
-		last_peer_id := msgid
+		last_peer_id := msgid		
 		if ((msg.flag & MESSAGE_FLAG_GROUP) != 0) {
-			_, last_peer_id = storage.getLastMessageID(off.appid, off.receiver)
+			_, last_peer_id = storage.getLastMessageID(off.appid, off.receiver)			
 		}
 		ui := &UserIndex{msgid, last_peer_id, 0, 0}
 		storage.setPeerIndex(off.appid, off.receiver, ui)
@@ -805,7 +816,7 @@ func (storage *PeerStorage) execMessage(msg *Message, msgid int64) {
 		if last_seq_id%BATCH_SIZE == 0 {
 			last_batch_id = msgid
 		}
-
+		
 		ui := &UserIndex{msgid, last_peer_id, last_batch_id, last_seq_id}
 		storage.setPeerIndex(off.appid, off.receiver, ui)
 	}

@@ -18,7 +18,6 @@
  */
 
 package main
-
 import "fmt"
 import "github.com/gomodule/redigo/redis"
 

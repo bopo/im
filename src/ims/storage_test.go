@@ -20,14 +20,14 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
-	flag.Parse()
-	storage = NewStorage("/tmp")
+	flag.Parse()	
+	storage = NewStorage("/tmp")	
 	os.Exit(m.Run())
 }
 
 func Test_Storage(t *testing.T) {
-	im := &IMMessage{sender: 1, receiver: 2, content: "test"}
-	msg := &Message{cmd: MSG_IM, body: im}
+	im := &IMMessage{sender:1, receiver:2, content:"test"}
+	msg := &Message{cmd:MSG_IM, body:im}
 	msgid := storage.SaveMessage(msg)
 	msg2 := storage.LoadMessage(msgid)
 	if msg2 != nil {
@@ -36,20 +36,22 @@ func Test_Storage(t *testing.T) {
 		log.Println("can't load msg:", msgid)
 	}
 }
+ 
 
 func Test_LoadLatest(t *testing.T) {
-	im := &IMMessage{sender: 1, receiver: 2, content: "test"}
-	msg := &Message{cmd: MSG_IM, body: im}
+	im := &IMMessage{sender:1, receiver:2, content:"test"}
+	msg := &Message{cmd:MSG_IM, body:im}
 	storage.SavePeerMessage(appid, im.receiver, device_id, msg)
-
-	im = &IMMessage{sender: 1, receiver: 2, content: "test2"}
-	msg = &Message{cmd: MSG_IM, body: im}
+	
+	im = &IMMessage{sender:1, receiver:2, content:"test2"}
+	msg = &Message{cmd:MSG_IM, body:im}
 	storage.SavePeerMessage(appid, im.receiver, device_id, msg)
 
 	messages := storage.LoadLatestMessages(appid, im.receiver, 2)
 	latest := messages[0]
 	im2 := latest.msg.body.(*IMMessage)
 	log.Println("sender:", im2.sender, " receiver:", im2.receiver, " content:", string(im2.content))
+
 
 	latest = messages[1]
 	im2 = latest.msg.body.(*IMMessage)
@@ -59,19 +61,20 @@ func Test_LoadLatest(t *testing.T) {
 
 func Test_Sync(t *testing.T) {
 	last_id, _ := storage.GetLastMessageID(appid, 2)
-
-	im := &IMMessage{sender: 1, receiver: 2, content: "test"}
-	msg := &Message{cmd: MSG_IM, body: im}
+	
+	im := &IMMessage{sender:1, receiver:2, content:"test"}
+	msg := &Message{cmd:MSG_IM, body:im}
 	storage.SavePeerMessage(appid, im.receiver, device_id, msg)
-
-	im = &IMMessage{sender: 1, receiver: 2, content: "test2"}
-	msg = &Message{cmd: MSG_IM, body: im}
+	
+	im = &IMMessage{sender:1, receiver:2, content:"test2"}
+	msg = &Message{cmd:MSG_IM, body:im}
 	storage.SavePeerMessage(appid, im.receiver, device_id, msg)
-
+	
 	messages, _, _ := storage.LoadHistoryMessagesV3(appid, im.receiver, last_id, 0, 0)
 	latest := messages[0]
 	im2 := latest.msg.body.(*IMMessage)
 	log.Println("sender:", im2.sender, " receiver:", im2.receiver, " content:", string(im2.content))
+
 
 	latest = messages[1]
 	im2 = latest.msg.body.(*IMMessage)
@@ -83,9 +86,9 @@ func Test_SyncBatch(t *testing.T) {
 	last_id, _ := storage.GetLastMessageID(appid, receiver)
 
 	for i := 0; i < 5000; i++ {
-		content := fmt.Sprintf("test:%d", i)
-		im := &IMMessage{sender: 1, receiver: receiver, content: content}
-		msg := &Message{cmd: MSG_IM, body: im}
+		content := fmt.Sprintf("test:%d", i)		
+		im := &IMMessage{sender:1, receiver:receiver, content:content}
+		msg := &Message{cmd:MSG_IM, body:im}
 		storage.SavePeerMessage(appid, im.receiver, device_id, msg)
 	}
 
@@ -96,7 +99,7 @@ func Test_SyncBatch(t *testing.T) {
 		latest := messages[0]
 		im2 := latest.msg.body.(*IMMessage)
 		log.Println("loop:", loop, "sender:", im2.sender, " receiver:", im2.receiver, " content:", string(im2.content))
-
+		
 		loop++
 		last_id = last_msgid
 		hasMore = m

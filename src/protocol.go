@@ -37,36 +37,32 @@ const MSG_HEADER_SIZE = 12
 
 var message_descriptions map[int]string = make(map[int]string)
 
-type MessageCreator func() IMessage
-
+type MessageCreator func()IMessage
 var message_creators map[int]MessageCreator = make(map[int]MessageCreator)
 
-type VersionMessageCreator func() IVersionMessage
-
+type VersionMessageCreator func()IVersionMessage
 var vmessage_creators map[int]VersionMessageCreator = make(map[int]VersionMessageCreator)
 
 //true client->server
 var external_messages [256]bool;
 
+
 func WriteHeader(len int32, seq int32, cmd byte, version byte, flag byte, buffer io.Writer) {
-	_ = binary.Write(buffer, binary.BigEndian, len)
-	_ = binary.Write(buffer, binary.BigEndian, seq)
+	binary.Write(buffer, binary.BigEndian, len)
+	binary.Write(buffer, binary.BigEndian, seq)
 	t := []byte{cmd, byte(version), flag, 0}
-	_, _ = buffer.Write(t)
+	buffer.Write(t)
 }
 
 func ReadHeader(buff []byte) (int, int, int, int, int) {
 	var length int32
 	var seq int32
 	buffer := bytes.NewBuffer(buff)
-
-	_ = binary.Read(buffer, binary.BigEndian, &length)
-	_ = binary.Read(buffer, binary.BigEndian, &seq)
-
+	binary.Read(buffer, binary.BigEndian, &length)
+	binary.Read(buffer, binary.BigEndian, &seq)
 	cmd, _ := buffer.ReadByte()
 	version, _ := buffer.ReadByte()
 	flag, _ := buffer.ReadByte()
-
 	return int(length), int(seq), int(cmd), int(version), int(flag)
 }
 
@@ -81,31 +77,27 @@ func SendMessage(conn io.Writer, msg *Message) error {
 	WriteMessage(buffer, msg)
 	buf := buffer.Bytes()
 	n, err := conn.Write(buf)
-
 	if err != nil {
 		log.Info("sock write error:", err)
 		return err
 	}
-
 	if n != len(buf) {
 		log.Infof("write less:%d %d", n, len(buf))
 		return errors.New("write less")
 	}
-
 	return nil
 }
 
 func ReceiveLimitMessage(conn io.Reader, limit_size int, external bool) *Message {
 	buff := make([]byte, 12)
 	_, err := io.ReadFull(conn, buff)
-
+	
 	if err != nil {
 		log.Info("sock read error:", err)
 		return nil
 	}
 
 	length, seq, cmd, version, flag := ReadHeader(buff)
-
 	if length < 0 || length >= limit_size {
 		log.Info("invalid len:", length)
 		return nil
@@ -117,10 +109,9 @@ func ReceiveLimitMessage(conn io.Reader, limit_size int, external bool) *Message
 		log.Warning("invalid external message cmd:", Command(cmd))
 		return nil
 	}
-
+	
 	buff = make([]byte, length)
 	_, err = io.ReadFull(conn, buff)
-
 	if err != nil {
 		log.Info("sock read error:", err)
 		return nil
@@ -139,6 +130,7 @@ func ReceiveLimitMessage(conn io.Reader, limit_size int, external bool) *Message
 	return message
 }
 
+
 func ReceiveMessage(conn io.Reader) *Message {
 	return ReceiveLimitMessage(conn, 32*1024, false)
 }
@@ -152,3 +144,5 @@ func ReceiveClientMessage(conn io.Reader) *Message {
 func ReceiveStorageSyncMessage(conn io.Reader) *Message {
 	return ReceiveLimitMessage(conn, 32*1024*1024, false)
 }
+
+

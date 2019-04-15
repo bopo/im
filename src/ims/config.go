@@ -39,12 +39,13 @@ type StorageConfig struct {
 	storage_root        string
 	kefu_appid          int64
 	http_listen_address string
+	
 	sync_listen         string
 	master_address      string
 	is_push_system      bool
-	group_limit         int //普通群离线消息的数量限制
-	limit               int //单次离线消息的数量限制
-	hard_limit          int //离线消息总的数量限制
+	group_limit         int  //普通群离线消息的数量限制
+	limit               int  //单次离线消息的数量限制
+	hard_limit          int  //离线消息总的数量限制
 }
 
 func get_int(app_cfg map[string]string, key string) int64 {
@@ -71,6 +72,7 @@ func get_opt_int(app_cfg map[string]string, key string, default_value int64) int
 	return n
 }
 
+
 func get_string(app_cfg map[string]string, key string) string {
 	concurrency, present := app_cfg[key]
 	if !present {
@@ -91,7 +93,6 @@ func read_storage_cfg(cfg_path string) *StorageConfig {
 	config := new(StorageConfig)
 	app_cfg := make(map[string]string)
 	err := cfg.Load(cfg_path, app_cfg)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,6 +107,6 @@ func read_storage_cfg(cfg_path string) *StorageConfig {
 	config.limit = int(get_opt_int(app_cfg, "limit", OFFLINE_DEFAULT_LIMIT))
 	config.group_limit = int(get_opt_int(app_cfg, "group_limit", GROUP_OFFLINE_DEFAULT_LIMIT))
 	config.hard_limit = int(get_opt_int(app_cfg, "hard_limit", OFFLINE_DEFAULT_HARD_LIMIT))
-
 	return config
 }
+

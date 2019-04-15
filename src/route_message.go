@@ -18,7 +18,6 @@
  */
 
 package main
-
 import "bytes"
 import "encoding/binary"
 
@@ -27,22 +26,24 @@ const MSG_SUBSCRIBE = 130
 const MSG_UNSUBSCRIBE = 131
 const MSG_PUBLISH = 132
 
+
 const MSG_PUBLISH_GROUP = 135
 
 const MSG_SUBSCRIBE_ROOM = 136
 const MSG_UNSUBSCRIBE_ROOM = 137
 const MSG_PUBLISH_ROOM = 138
 
+
 func init() {
-	message_creators[MSG_SUBSCRIBE] = func() IMessage { return new(SubscribeMessage) }
-	message_creators[MSG_UNSUBSCRIBE] = func() IMessage { return new(AppUserID) }
-	message_creators[MSG_PUBLISH] = func() IMessage { return new(AppMessage) }
-
-	message_creators[MSG_PUBLISH_GROUP] = func() IMessage { return new(AppMessage) }
-
-	message_creators[MSG_SUBSCRIBE_ROOM] = func() IMessage { return new(AppRoomID) }
-	message_creators[MSG_UNSUBSCRIBE_ROOM] = func() IMessage { return new(AppRoomID) }
-	message_creators[MSG_PUBLISH_ROOM] = func() IMessage { return new(AppMessage) }
+	message_creators[MSG_SUBSCRIBE] = func()IMessage{return new(SubscribeMessage)}
+	message_creators[MSG_UNSUBSCRIBE] = func()IMessage{return new(AppUserID)}
+	message_creators[MSG_PUBLISH] = func()IMessage{return new(AppMessage)}
+	
+	message_creators[MSG_PUBLISH_GROUP] = func()IMessage{return new(AppMessage)}
+	
+	message_creators[MSG_SUBSCRIBE_ROOM] = func()IMessage{return new(AppRoomID)}
+	message_creators[MSG_UNSUBSCRIBE_ROOM] = func()IMessage{return new(AppRoomID)}
+	message_creators[MSG_PUBLISH_ROOM] = func()IMessage{return new(AppMessage)}
 
 	message_descriptions[MSG_SUBSCRIBE] = "MSG_SUBSCRIBE"
 	message_descriptions[MSG_UNSUBSCRIBE] = "MSG_UNSUBSCRIBE"
@@ -56,13 +57,14 @@ func init() {
 }
 
 type AppMessage struct {
-	appid     int64
-	receiver  int64
-	msgid     int64
+	appid    int64
+	receiver int64
+	msgid    int64
 	device_id int64
 	timestamp int64 //纳秒,测试消息从im->imr->im的时间
-	msg       *Message
+	msg      *Message
 }
+
 
 func (amsg *AppMessage) ToData() []byte {
 	if amsg.msg == nil {
@@ -70,16 +72,16 @@ func (amsg *AppMessage) ToData() []byte {
 	}
 
 	buffer := new(bytes.Buffer)
-	_ = binary.Write(buffer, binary.BigEndian, amsg.appid)
-	_ = binary.Write(buffer, binary.BigEndian, amsg.receiver)
-	_ = binary.Write(buffer, binary.BigEndian, amsg.msgid)
-	_ = binary.Write(buffer, binary.BigEndian, amsg.device_id)
-	_ = binary.Write(buffer, binary.BigEndian, amsg.timestamp)
+	binary.Write(buffer, binary.BigEndian, amsg.appid)
+	binary.Write(buffer, binary.BigEndian, amsg.receiver)
+	binary.Write(buffer, binary.BigEndian, amsg.msgid)
+	binary.Write(buffer, binary.BigEndian, amsg.device_id)
+	binary.Write(buffer, binary.BigEndian, amsg.timestamp)
 	mbuffer := new(bytes.Buffer)
 	WriteMessage(mbuffer, amsg.msg)
 	msg_buf := mbuffer.Bytes()
 	var l int16 = int16(len(msg_buf))
-	_ = binary.Write(buffer, binary.BigEndian, l)
+	binary.Write(buffer, binary.BigEndian, l)
 	buffer.Write(msg_buf)
 
 	buf := buffer.Bytes()
@@ -92,20 +94,20 @@ func (amsg *AppMessage) FromData(buff []byte) bool {
 	}
 
 	buffer := bytes.NewBuffer(buff)
-	_ = binary.Read(buffer, binary.BigEndian, &amsg.appid)
-	_ = binary.Read(buffer, binary.BigEndian, &amsg.receiver)
-	_ = binary.Read(buffer, binary.BigEndian, &amsg.msgid)
-	_ = binary.Read(buffer, binary.BigEndian, &amsg.device_id)
-	_ = binary.Read(buffer, binary.BigEndian, &amsg.timestamp)
+	binary.Read(buffer, binary.BigEndian, &amsg.appid)
+	binary.Read(buffer, binary.BigEndian, &amsg.receiver)
+	binary.Read(buffer, binary.BigEndian, &amsg.msgid)
+	binary.Read(buffer, binary.BigEndian, &amsg.device_id)
+	binary.Read(buffer, binary.BigEndian, &amsg.timestamp)	
 
 	var l int16
-	_ = binary.Read(buffer, binary.BigEndian, &l)
+	binary.Read(buffer, binary.BigEndian, &l)
 	if int(l) > buffer.Len() || l < 0 {
 		return false
 	}
 
 	msg_buf := make([]byte, l)
-	_, _ = buffer.Read(msg_buf)
+	buffer.Read(msg_buf)
 
 	mbuffer := bytes.NewBuffer(msg_buf)
 	//recusive
@@ -118,17 +120,20 @@ func (amsg *AppMessage) FromData(buff []byte) bool {
 	return true
 }
 
+
+
+
 type SubscribeMessage struct {
-	appid  int64
-	uid    int64
-	online int8 //1 or 0
+	appid    int64
+	uid      int64
+	online   int8 //1 or 0
 }
 
 func (sub *SubscribeMessage) ToData() []byte {
 	buffer := new(bytes.Buffer)
-	_ = binary.Write(buffer, binary.BigEndian, sub.appid)
-	_ = binary.Write(buffer, binary.BigEndian, sub.uid)
-	_ = binary.Write(buffer, binary.BigEndian, sub.online)
+	binary.Write(buffer, binary.BigEndian, sub.appid)
+	binary.Write(buffer, binary.BigEndian, sub.uid)
+	binary.Write(buffer, binary.BigEndian, sub.online)	
 	buf := buffer.Bytes()
 	return buf
 }
@@ -138,10 +143,10 @@ func (sub *SubscribeMessage) FromData(buff []byte) bool {
 		return false
 	}
 
-	buffer := bytes.NewBuffer(buff)
-	_ = binary.Read(buffer, binary.BigEndian, &sub.appid)
-	_ = binary.Read(buffer, binary.BigEndian, &sub.uid)
-	_ = binary.Read(buffer, binary.BigEndian, &sub.online)
-
+	buffer := bytes.NewBuffer(buff)	
+	binary.Read(buffer, binary.BigEndian, &sub.appid)
+	binary.Read(buffer, binary.BigEndian, &sub.uid)
+	binary.Read(buffer, binary.BigEndian, &sub.online)
+	
 	return true
 }

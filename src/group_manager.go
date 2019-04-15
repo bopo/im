@@ -32,26 +32,25 @@ import _ "github.com/go-sql-driver/mysql"
 import log "github.com/golang/glog"
 
 //同redis的长链接保持5minute的心跳
-const SUBSCRIBE_HEATBEAT = 5 * 60
+const SUBSCRIBE_HEATBEAT = 5*60
 
-// 群组管理
+
 type GroupManager struct {
-	mutex     sync.Mutex
-	groups    map[int64]*Group
-	ping      string
+	mutex  sync.Mutex
+	groups map[int64]*Group
+	ping     string
 	action_id int64
 	dirty     bool
 }
 
-// 新建群组管理
 func NewGroupManager() *GroupManager {
 	now := time.Now().Unix()
 	r := fmt.Sprintf("ping_%d", now)
 	for i := 0; i < 4; i++ {
 		n := rand.Int31n(26)
-		r = r + string('a'+n)
+		r = r + string('a' + n)
 	}
-
+	
 	m := new(GroupManager)
 	m.groups = make(map[int64]*Group)
 	m.ping = r
@@ -60,19 +59,17 @@ func NewGroupManager() *GroupManager {
 	return m
 }
 
-// 获取群组列表
-func (group_manager *GroupManager) GetGroups() []*Group {
+func (group_manager *GroupManager) GetGroups() []*Group{
 	group_manager.mutex.Lock()
 	defer group_manager.mutex.Unlock()
 
 	groups := make([]*Group, 0, len(group_manager.groups))
-	for _, group := range (group_manager.groups) {
+	for _, group := range(group_manager.groups) {
 		groups = append(groups, group)
 	}
 	return groups
 }
 
-// 查找群组
 func (group_manager *GroupManager) FindGroup(gid int64) *Group {
 	group_manager.mutex.Lock()
 	defer group_manager.mutex.Unlock()
@@ -82,7 +79,6 @@ func (group_manager *GroupManager) FindGroup(gid int64) *Group {
 	return nil
 }
 
-// 查找用户群组
 func (group_manager *GroupManager) FindUserGroups(appid int64, uid int64) []*Group {
 	group_manager.mutex.Lock()
 	defer group_manager.mutex.Unlock()
@@ -96,7 +92,6 @@ func (group_manager *GroupManager) FindUserGroups(appid int64, uid int64) []*Gro
 	return groups
 }
 
-// 创建群组句柄
 func (group_manager *GroupManager) HandleCreate(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 3 {
@@ -133,7 +128,6 @@ func (group_manager *GroupManager) HandleCreate(data string) {
 	}
 }
 
-// 解散群组操作
 func (group_manager *GroupManager) HandleDisband(data string) {
 	gid, err := strconv.ParseInt(data, 10, 64)
 	if err != nil {
@@ -151,7 +145,6 @@ func (group_manager *GroupManager) HandleDisband(data string) {
 	}
 }
 
-// 升级群组操作
 func (group_manager *GroupManager) HandleUpgrade(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 3 {
@@ -187,7 +180,7 @@ func (group_manager *GroupManager) HandleUpgrade(data string) {
 	}
 }
 
-// 群组添加用户操作
+
 func (group_manager *GroupManager) HandleMemberAdd(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 2 {
@@ -215,7 +208,6 @@ func (group_manager *GroupManager) HandleMemberAdd(data string) {
 	}
 }
 
-// 群组删除用户操作
 func (group_manager *GroupManager) HandleMemberRemove(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 2 {
@@ -242,7 +234,6 @@ func (group_manager *GroupManager) HandleMemberRemove(data string) {
 	}
 }
 
-// 群组禁言操作
 func (group_manager *GroupManager) HandleMute(data string) {
 	arr := strings.Split(data, ",")
 	if len(arr) != 3 {
@@ -274,7 +265,7 @@ func (group_manager *GroupManager) HandleMute(data string) {
 	}
 }
 
-//保证 ACTION ID 的顺序性
+//保证action id的顺序性
 func (group_manager *GroupManager) parseAction(data string) (bool, int64, int64, string) {
 	arr := strings.SplitN(data, ":", 3)
 	if len(arr) != 3 {
@@ -296,7 +287,6 @@ func (group_manager *GroupManager) parseAction(data string) (bool, int64, int64,
 	return true, prev_id, action_id, arr[2]
 }
 
-// 各种操作调度函数
 func (group_manager *GroupManager) handleAction(data string, channel string) {
 	r, prev_id, action_id, content := group_manager.parseAction(data)
 	if r {
@@ -321,10 +311,9 @@ func (group_manager *GroupManager) handleAction(data string, channel string) {
 			group_manager.HandleMute(content)
 		}
 		group_manager.action_id = action_id
-	}
+	}	
 }
 
-// 刷新群组
 func (group_manager *GroupManager) ReloadGroup() bool {
 	log.Info("reload group...")
 	db, err := sql.Open("mysql", config.mysqldb_datasource)
@@ -347,7 +336,6 @@ func (group_manager *GroupManager) ReloadGroup() bool {
 	return true
 }
 
-// 活动群组操作ID
 func (group_manager *GroupManager) getActionID() (int64, error) {
 	conn := redis_pool.Get()
 	defer conn.Close()
@@ -374,13 +362,12 @@ func (group_manager *GroupManager) getActionID() (int64, error) {
 		action_id, err := strconv.ParseInt(arr[1], 10, 64)
 		if err != nil {
 			log.Info("error:", err, actions)
-			return 0, err
+			return 0, err			
 		}
 		return action_id, nil
 	}
 }
 
-// 加载群组信息
 func (group_manager *GroupManager) load() {
 	//循环直到成功
 	for {
@@ -389,7 +376,7 @@ func (group_manager *GroupManager) load() {
 			time.Sleep(1 * time.Second)
 			continue
 		}
-
+		
 		r := group_manager.ReloadGroup()
 		if !r {
 			time.Sleep(1 * time.Second)
@@ -424,9 +411,8 @@ func (group_manager *GroupManager) checkActionID() {
 	}
 }
 
-// 单个运行
 func (group_manager *GroupManager) RunOnce() bool {
-	t := redis.DialReadTimeout(time.Second * SUBSCRIBE_HEATBEAT)
+	t := redis.DialReadTimeout(time.Second*SUBSCRIBE_HEATBEAT)
 	c, err := redis.Dial("tcp", config.redis_address, t)
 	if err != nil {
 		log.Info("dial redis error:", err)
@@ -444,14 +430,14 @@ func (group_manager *GroupManager) RunOnce() bool {
 	psc := redis.PubSubConn{c}
 	psc.Subscribe("group_create", "group_disband", "group_member_add",
 		"group_member_remove", "group_upgrade", "group_member_mute", group_manager.ping)
-
+	
 	group_manager.checkActionID()
 	for {
 		switch v := psc.Receive().(type) {
 		case redis.Message:
 			if v.Channel == "group_create" ||
 				v.Channel == "group_disband" ||
-				v.Channel == "group_member_add" ||
+				v.Channel == "group_member_add"	||
 				v.Channel == "group_member_remove" ||
 				v.Channel == "group_upgrade" ||
 				v.Channel == "group_member_mute" {
@@ -511,10 +497,11 @@ func (group_manager *GroupManager) Ping() {
 	}
 }
 
+
 func (group_manager *GroupManager) PingLoop() {
 	for {
 		group_manager.Ping()
-		time.Sleep(time.Second * (SUBSCRIBE_HEATBEAT - 10))
+		time.Sleep(time.Second*(SUBSCRIBE_HEATBEAT-10))
 	}
 }
 
