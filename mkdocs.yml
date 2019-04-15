@@ -59,7 +59,7 @@ pages:
      - 'Browser Enhancements': 'topics/browser-enhancements.md'
      - 'The Browsable API': 'topics/browsable-api.md'
      - 'REST, Hypermedia & HATEOAS': 'topics/rest-hypermedia-hateoas.md'
- - 社区讨论:
+ - 相关讨论:
      - 'Tutorials and Resources': 'community/tutorials-and-resources.md'
      - 'Third Party Packages': 'community/third-party-packages.md'
      - 'Contributing to REST framework': 'community/contributing.md'

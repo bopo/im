@@ -41,7 +41,7 @@
     clip: rect(0,0,0,0);
     border: 0;">Django REST Framework</h1>
 
-<img alt="{{ config.site_name }}" src="img/logo.png" width="600px" style="display: block; margin: 0 auto 0 auto">
+<img alt="Django REST Framework" title="Logo by Jake 'Sid' Smith" src="img/logo.png" width="600px" style="display: block; margin: 0 auto 0 auto">
 </p>
 
 Django REST framework is a powerful and flexible toolkit for building Web APIs.
