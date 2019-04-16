@@ -51,6 +51,8 @@ device_id = "f9d2a7c2-701a-11e5-9c3e-34363bd464b2"
 def byte(data):
     return data if type(data) is bytes else data.encode('utf-8')
 
+def b2s(data):
+    return data.decode() if type(data) is bytes else str(data)
 
 class AuthenticationToken:
     def __init__(self):

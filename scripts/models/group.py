@@ -3,6 +3,9 @@ import logging
 
 import redis
 
+def b2s(data):
+    print('data:', data)
+    return data.decode() if type(data) is bytes else data
 
 def execute(db, sql):
     try:
@@ -158,7 +161,9 @@ class Group(object):
                     action_id = int(action_id) if action_id else 0
                     action_id = action_id + 1
 
-                    group_actions = pipe.get("groups_actions").decode()
+                    group_actions = pipe.get("groups_actions")
+                    group_actions = b2s(group_actions)
+
                     prev_id = 0
 
                     if group_actions:
