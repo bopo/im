@@ -24,7 +24,7 @@ import "time"
 import "net"
 import log "github.com/golang/glog"
 import "google.golang.org/grpc"
-import pb "github.com/GoBelieveIO/im_service/rpc"
+import pb "github.com/bopo/im/pkg/rpc"
 import "golang.org/x/net/context"
 
 

@@ -1,7 +1,7 @@
 all:
-	cd src/im && CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
-	cd src/ims && CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
-	cd src/imr && CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
+	cd src/im && GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
+	cd src/ims && GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
+	cd src/imr && GO111MODULE=on CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) make
 
 dep:
 	dep ensure -v
